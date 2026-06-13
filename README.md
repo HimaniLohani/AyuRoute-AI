@@ -1,6 +1,6 @@
-# 🏥 MediRoute: AI-Powered Symptom Checker & Hyperlocal Healthcare Router `(In Development)`
+# 🏥 AIRoute: AI-Powered Symptom Checker & Hyperlocal Healthcare Router `(In Development)`
 
-MediRoute is an intelligent web application designed to optimize medical response times, reduce unnecessary hospital visits, and save patient costs. The platform acts as a healthcare router by classifying user-inputted symptoms into different risk categories and guiding them to the most appropriate medical resource.
+AIRoute is an intelligent web application designed to optimize medical response times, reduce unnecessary hospital visits, and save patient costs. The platform acts as a healthcare router by classifying user-inputted symptoms into different risk categories and guiding them to the most appropriate medical resource.
 
 ---
 
