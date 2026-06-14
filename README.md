@@ -40,7 +40,7 @@ AyuRoute is an intelligent web application designed to optimize medical response
 This project is currently **under active development**. 
 - [x] Concept and Logic Flow Design
 - [x] Basic UI Wireframing
-- [ ] Frontend Core UI Implementation (In Progress)
+- [x] Frontend Core UI Implementation (In Progress)
 - [ ] Local JSON Database Setup for Doctors and Medicines
 - [ ] API Integration (Geolocation & Mapping)
 
