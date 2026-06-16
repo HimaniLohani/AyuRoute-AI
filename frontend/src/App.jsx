@@ -1,56 +1,57 @@
 /* eslint-disable */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Pharmacy from './pages/Pharmacy';
-import { fetchHealthGuidance } from './services/api';
 
+// Dual-Language Comprehensive Dictionary for UI Labels
+// स्थानीय भाषा और अंग्रेजी में अनुवाद के लिए व्यापक शब्दकोश ग्रिड
 const DICT = {
   en: {
     brand: "AyuRoute AI",
-    subBrand: "Enterprise Health Navigation Grid",
-    tagline: "Describe complex multi-system symptoms. Neural mapping redirects to localized expert clinics, drugs & diagnostic telemetry.",
+    subBrand: "Your Digital Doctor & Smart Health Radar",
+    tagline: "Speak or type your symptoms. Get precise data on nearby specialist clinics, pharmacies, and standard medical guides instantly.",
     micText: "Tap mic & speak symptoms",
-    inputPlaceholder: "Type symptoms (e.g., migraine, lower back stiffness, acid reflux)...",
-    categoryLabel: "Filter Symptoms by Clinical Specialization System",
-    getGuidance: "Execute Clinical AI Triage",
-    errorText: "Please activate at least one diagnostic symptom parameter!",
-    recommendedDocs: "Specialist Doctors En-Route Your Coordinates",
-    suggestedMeds: "Targeted Pharmaceutical Countermeasures",
-    disclaimer: "⚕️ AyuRoute AI provides general health guidance only. In case of acute physical trauma, immediately dial 108.",
-    loadingText: "Mapping neural syndromic networks across global cloud repositories..."
+    micListening: "🔴 Listening actively... Please speak now",
+    inputPlaceholder: "Type symptoms (e.g., headache, chest pain, stomach gas, cough)...",
+    categoryLabel: "Select Disease Category / बीमारी की श्रेणी चुनें",
+    getGuidance: "Analyze Symptoms Now",
+    errorText: "Please choose a symptom checkpoint or type your current condition first!",
+    recommendedDocs: "👨‍⚕️ Nearest Specialist Doctors & Clinics (नज़दीकी विशेषज्ञ डॉक्टर)",
+    suggestedMeds: "💊 Initial First-Aid & Generic Medicines (प्राथमिक उपचार और दवाएं)",
+    suggestedDiet: "🥗 Dietary Guidelines & Precautions (परहेज और खान-पान)",
+    disclaimer: "⚕️ Protocol Notice: This data is for informational guidance. In critical emergencies, please dial 108 or rush to the nearest emergency ward immediately.",
+    loadingText: "Scanning dynamic medical grid for your location...",
+    tableDocName: "Doctor Name",
+    tableSpecialty: "Specialization",
+    tableDistance: "Distance / Location",
+    tableTiming: "Available Timings"
   },
   hi: {
     brand: "आयुRoute AI",
-    subBrand: "एंटरप्राइज हेल्थ नेविगेशन ग्रिड",
-    tagline: "जटिल लक्षणों को आवाज या टेक्स्ट द्वारा बताएं। एआई तुरंत सही विशेषज्ञ डॉक्टर, दवाएं और जांच केंद्र रीडायरेक्ट करेगा।",
-    micText: "माइक दबाएं और लक्षण बोलें",
-    inputPlaceholder: "लक्षण टाइप करें (जैसे: आधा सिर दर्द, कमर में अकड़न, एसिडिटी)...",
-    categoryLabel: "चिकित्सीय विशेषज्ञता प्रणाली द्वारा लक्षण फ़िल्टर करें",
-    getGuidance: "क्लिनिकल एआई ट्राइएज शुरू करें",
-    errorText: "कृपया कम से कम एक नैदानिक लक्षण पैरामीटर सक्रिय करें!",
-    recommendedDocs: "आपके क्षेत्र के निकटतम विशेषज्ञ डॉक्टर",
-    suggestedMeds: "लक्षित औषधीय दवाएं और उपचार",
-    disclaimer: "⚕️ आयुRoute AI केवल सामान्य स्वास्थ्य मार्गदर्शन प्रदान करता है। किसी भी आपातकाल में तुरंत 108 डायल करें।",
-    loadingText: "वैश्विक क्लाउड रिपॉजिटरी में न्यूरल सिंड्रोमिक नेटवर्क का मिलान किया जा रहा है..."
+    subBrand: "आपका डिजिटल डॉक्टर और स्मार्ट हेल्थ रडार",
+    tagline: "अपने लक्षण बोलकर या लिखकर बताएं। अपने आस-पास के विशेषज्ञ डॉक्टरों, क्लिनिक की दूरी और सही प्राथमिक उपचार की जानकारी तुरंत पाएं।",
+    micText: "माइक दबाएं और बीमारी बताएं",
+    micListening: "🔴 सिस्टम सुन रहा है... कृपया अपनी समस्या बोलें",
+    inputPlaceholder: "लक्षण लिखें (जैसे: सिर दर्द, सीने में दर्द, पेट में गैस, खांसी)...",
+    categoryLabel: "बीमारी की श्रेणी चुनें",
+    getGuidance: "स्वास्थ्य गाइड की जांच करें",
+    errorText: "कृपया पहले कोई लक्षण चुनें या अपनी स्थिति टाइप करें!",
+    recommendedDocs: "👨‍⚕️ नज़दीकी विशेषज्ञ डॉक्टर और क्लिनिक (Nearest Specialists)",
+    suggestedMeds: "💊 प्राथमिक उपचार और सामान्य दवाएं (First-Aid & Medicines)",
+    suggestedDiet: "🥗 आवश्यक परहेज और खान-पान टिप्स (Dietary Guidelines)",
+    disclaimer: "⚕️ आवश्यक सूचना: यह जानकारी केवल आपके मार्गदर्शन के लिए है। गंभीर आपातकाल की स्थिति में तुरंत 108 डायल करें या नज़दीकी अस्पताल जाएं।",
+    loadingText: "आपके स्थान के अनुसार सही स्वास्थ्य जानकारी खोजी जा रही है...",
+    tableDocName: "डॉक्टर का नाम",
+    tableSpecialty: "विशेषज्ञता (Department)",
+    tableDistance: "दूरी / क्लिनिक का पता",
+    tableTiming: "मिलने का समय"
   }
 };
 
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let globalRecognition = null;
-
-if (SpeechRecognition) {
-  globalRecognition = new SpeechRecognition();
-  globalRecognition.interimResults = false;
-  globalRecognition.maxAlternatives = 1;
-  globalRecognition.continuous = false;
-}
-
 function App() {
-  const [lang, setLang] = useState('en');
+  const [lang, setLang] = useState('hi'); 
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [activeTab, setActiveTab] = useState('triage'); 
-  const [isListening, setIsListening] = useState(false);
   
-  // 🧠 SYMPTOMS ENGINE & CATEGORY STATE (ALL RE-INJECTED)
   const [activeCategory, setActiveCategory] = useState('Emergency');
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [showResults, setShowResults] = useState(false);
@@ -58,153 +59,171 @@ function App() {
   const [textInput, setTextInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [apiResponse, setApiResponse] = useState(null);
+  const [isListening, setIsListening] = useState(false);
 
-  // 🔐 AUTHENTICATION STATES (GMAIL LOGIN/LOGOUT)
+  // Authentication and Session state configuration node
   const [user, setUser] = useState(null); 
+  const [authMode, setAuthMode] = useState('login'); 
   const [emailInput, setEmailInput] = useState('');
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [fullNameInput, setFullNameInput] = useState('');
+  const [gpsLocation, setGpsLocation] = useState("Kanpur Central Grid, Uttar Pradesh");
 
-  // 🚨 AMBULANCE RADAR STATES
+  // Emergency dispatch registry items
   const [ambStatus, setAmbStatus] = useState('idle');
   const [ambTime, setAmbTime] = useState(10);
-  const [dispatchDetails, setDispatchDetails] = useState({
-    patientName: '',
-    contactNo: '',
-    deliveryAddress: ''
-  });
+  const [dispatchDetails, setDispatchDetails] = useState({ patientName: '', contactNo: '', deliveryAddress: '' });
+  const [otpStep, setOtpStep] = useState(false); 
+  const [otpInput, setOtpInput] = useState('');
   const [formError, setFormError] = useState('');
+  
+  // ⚡ LIVE SANDBOX STATE: Keeps track of the generated OTP to show as a popup overlay
+  const [liveDemoAlert, setLiveDemoAlert] = useState(null);
 
   const t = DICT[lang];
 
-  // 📂 EXTENSIVE CLINICAL CATEGORIES MAPPING (ALL JOD DIYE PHIR SE)
   const CATEGORIES = [
-    { id: 'Emergency', label: { en: 'Emergency Core', hi: 'आपातकालीन' }, icon: '🚨' },
-    { id: 'Neurology', label: { en: 'Brain & Nerves', hi: 'मस्तिष्क व तंत्रिका' }, icon: '🧠' },
-    { id: 'Orthopedics', label: { en: 'Bones & Joints', hi: 'हड्डियां व जोड़' }, icon: '🦴' },
-    { id: 'Gastro', label: { en: 'Stomach & Digestion', hi: 'पेट व पाचन' }, icon: '🍕' },
-    { id: 'Respiratory', label: { en: 'Lungs & Breathing', hi: 'फेफड़े व श्वसन' }, icon: '💨' }
+    { id: 'Emergency', label: { en: 'Emergency (आपातकालीन)', hi: 'इमरजेंसी (आपातकालीन)' }, icon: '🚨' },
+    { id: 'Neurology', label: { en: 'Head & Brain (मस्तिष्क/सिर)', hi: 'मस्तिष्क और सिर दर्द' }, icon: '🧠' },
+    { id: 'Orthopedics', label: { en: 'Bones & Joints (हड्डी और जोड़)', hi: 'हड्डी और जोड़' }, icon: '🦴' },
+    { id: 'Gastro', label: { en: 'Stomach & Gas (पेट की समस्या)', hi: 'पेट और गैस' }, icon: '🍕' },
+    { id: 'Respiratory', label: { en: 'Cough & Cold (खांसी-जुकाम)', hi: 'खांसी और सांस' }, icon: '💨' }
   ];
 
-  // 🧬 ALL ADVANCED SYMPTOMS BACK AGAIN
   const SYMPTOMS_MAP = {
     Emergency: [
       { id: 'e1', name: { en: 'Severe Chest Pain', hi: 'सीने में तेज़ दर्द' } },
-      { id: 'e2', name: { en: 'Cannot Breathe / Asphyxia', hi: 'सांस लेने में भारी तकलीफ' } },
-      { id: 'e3', name: { en: 'Unconscious / Fainting', hi: 'बेहोशी या चक्कर आना' } },
-      { id: 'e4', name: { en: 'Sudden Speech Slur', hi: 'बोलने में लड़खड़ाहट' } }
+      { id: 'e2', name: { en: 'Severe Shortness of Breath', hi: 'सांस फूलना या सांस न आना' } }
     ],
     Neurology: [
-      { id: 'n1', name: { en: 'Throbbing Migraine Headaches', hi: 'आधा सिर में तेज़ दर्द' } },
-      { id: 'n2', name: { en: 'Chronic Insomnia', hi: 'अनिद्रा / नींद न आना' } },
-      { id: 'n3', name: { en: 'Vertigo & Loss of Balance', hi: 'चक्कर आना और संतुलन खोना' } },
-      { id: 'n4', name: { en: 'Memory Disorientation', hi: 'याददाश्त में भ्रम महसूस होना' } }
+      { id: 'n1', name: { en: 'Severe Migraine / Headache', hi: 'तेज़ आधा सिर दर्द (माइग्रेन)' } }
     ],
     Orthopedics: [
-      { id: 'o1', name: { en: 'Acute Lower Back Stiffness', hi: 'पीठ के निचले हिस्से में जकड़न' } },
-      { id: 'o2', name: { en: 'Swollen Knee Joints', hi: 'घुटनों में सूजन व दर्द' } },
-      { id: 'o3', name: { en: 'Cervical Neck Strain', hi: 'गर्दन और कंधों में अकड़न' } },
-      { id: 'o4', name: { en: 'Muscle Atrophy Spasms', hi: 'मांसपेशियों में तेज मरोड़' } }
+      { id: 'o1', name: { en: 'Severe Lower Back Stiffness', hi: 'कमर में भयंकर अकड़न/दर्द' } }
     ],
     Gastro: [
-      { id: 'g1', name: { en: 'Acid Reflux / Heartburn', hi: 'खट्टी डकारें और पेट में जलन' } },
-      { id: 'g2', name: { en: 'Nausea & Cyclical Vomiting', hi: 'उल्टी और जी मिचलाना' } },
-      { id: 'g3', name: { en: 'Bloating & IBS Gas Spasms', hi: 'पेट फूलना और गैस मरोड़' } },
-      { id: 'g4', name: { en: 'Acute Abdominal Cramps', hi: 'पेट में अचानक तेज मरोड़' } }
+      { id: 'g1', name: { en: 'Acid Reflux / Heartburn', hi: 'पेट में जलन, गैस और खट्टी डकारें' } }
     ],
     Respiratory: [
-      { id: 'r1', name: { en: 'Dry Hack Coughing', hi: 'लगातार सूखी खांसी' } },
-      { id: 'r2', name: { en: 'Asthmatic Wheezing', hi: 'सांस फूलना और घरघराहट' } },
-      { id: 'r3', name: { en: 'Nasal Sinus Congestion', hi: 'नाक बंद और सिर भारी होना' } },
-      { id: 'r4', name: { en: 'Sore Throat & High Fever', hi: 'गले में खराश और तेज़ बुखार' } }
+      { id: 'r1', name: { en: 'Continuous Dry Cough', hi: 'लगातार सूखी खांसी' } }
     ]
   };
 
-  // 🔥 INTELLIGENT COMPREHENSIVE MOCK ENGINE FOR TRIAGE
-  const generateBiggerMockResponse = (symptoms) => {
-    const symString = symptoms.join(' ').toLowerCase();
-
-    if (symString.includes('back') || symString.includes('knee') || symString.includes('पीठ') || symString.includes('घुटनों') || symString.includes('stiffness') || symString.includes('strain')) {
-      return {
-        title: "⚡ Structural Orthopedic / Joint Inflammatory Condition Detected",
-        desc: "AI Evaluation indicates potential Lumbar Spasm or early stage Osteo-arthritis. Physical strain should be minimized immediately.",
-        badgeBg: 'rgba(234, 179, 8, 0.1)', badgeBorder: '#eab308', badgeColor: '#eab308',
-        doctors: [
-          { name: "Dr. Alok Verma (MS, Ortho)", facility: "Apollo Bone & Joint Clinic", dist: "1.4 km", exp: "15 Yrs Exp", rating: "4.9" },
-          { name: "Dr. Priya Sharma (PT)", facility: "Elite Physio Rehabilitation Center", dist: "2.8 km", exp: "9 Yrs Exp", rating: "4.7" },
-          { name: "Dr. R. K. Goel", facility: "Metro Ortho Superspecialty Hub", dist: "3.5 km", exp: "22 Yrs Exp", rating: "4.8" }
-        ],
-        medicines: [
-          { name: "Aceclofenac + Paracetamol (Zerodol-P)", dose: "1 Tab - Post Meals if pain spikes" },
-          { name: "Glucosamine Chondroitin Complex", dose: "1 Capsule daily - Night repair course" },
-          { name: "Fast-Relief Diclofenac Topical Gel", dose: "Apply gently over targeted joints every 8 hours" }
-        ],
-        diet: { title: "Anti-Inflammatory Bone Recovery Protocol", tips: ["Incorporate warm turmeric extract milk daily.", "Maintain zero forward bending postures.", "Apply hot compression padding for 15 minutes."] }
-      };
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        setGpsLocation(`Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)} (Kanpur Region)`);
+      });
     }
+  }, []);
 
-    if (symString.includes('migraine') || symString.includes('insomnia') || symString.includes('सिर') || symString.includes('नींद') || symString.includes('vertigo')) {
-      return {
-        title: "🧠 Neurological Stress / Vascular Migraine Episode Triggered",
-        desc: "Symptom patterns map high compatibility with acute migraine shifts or high cortical fatigue. Rest in dark soundproof environment recommended.",
-        badgeBg: 'rgba(168, 85, 247, 0.1)', badgeBorder: '#a855f7', badgeColor: '#a855f7',
-        doctors: [
-          { name: "Dr. Sameer Kapoor (DM, Neurology)", facility: "Max Mind & Nerve Pavilion", dist: "2.1 km", exp: "18 Yrs Exp", rating: "4.9" },
-          { name: "Dr. Ananya Joshi (MD, Psychiatry)", facility: "Neuro-Care Cognitive Center", dist: "3.2 km", exp: "11 Yrs Exp", rating: "4.6" },
-          { name: "Dr. Vikrant Malhotra", facility: "Fortis Brain Institute Node", dist: "5.0 km", exp: "20 Yrs Exp", rating: "4.9" }
-        ],
-        medicines: [
-          { name: "Naproxen Sodium Tablets (250mg)", dose: "1 Tab during onset of severe aura pain" },
-          { name: "Melatonin Sleep-Cycle Regulatory (3mg)", dose: "1 Thin dissolve strip before sleep time" },
-          { name: "Magnesium Glycinate Neuromuscular Support", dose: "1 Capsule post dinner daily" }
-        ],
-        diet: { title: "Neuro-Vascular Stabilization Rules", tips: ["Completely isolate from blue-light smartphone matrix screens.", "Consume 500ml electrolyte-rich water.", "Avoid high-caffeine energy drinks immediately."] }
-      };
+ const startSpeechRecognition = () => {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert("⚠️ Browser Error: Google Chrome use karein, ismein mic best chalta hai.");
+    return;
+  }
+  
+  const recognition = new SpeechRecognition();
+  // Dono Hindi aur English mix ko pakadne ke liye configuration
+  recognition.lang = lang === 'hi' ? 'hi-IN' : 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => { 
+    setIsListening(true); 
+  };
+  
+  recognition.onerror = (event) => { 
+    console.error("Mic Error:", event.error);
+    setIsListening(false); 
+    if(event.error === 'not-allowed') {
+      alert("🛑 Mic Permission is not allowed inyour browser please giveaccess to your browser.");
     }
-
-    if (symString.includes('acid') || symString.includes('nausea') || symString.includes('पेट') || symString.includes('जलन') || symString.includes('bloating') || symString.includes('cramps')) {
-      return {
-        title: "🍕 Gastrointestinal Hyper-Acidity / Acute IBS Phase",
-        desc: "Gastric mucosal linings are experiencing pH imbalances. Avoid horizontal lying postures right after symptoms to prevent esophageal burns.",
-        badgeBg: 'rgba(16, 185, 129, 0.1)', badgeBorder: '#10b981', badgeColor: '#10b981',
-        doctors: [
-          { name: "Dr. Nilesh Shah (MD, Gastro)", facility: "Digestive Disease Cloud Hospital", dist: "0.9 km", exp: "16 Yrs Exp", rating: "4.8" },
-          { name: "Dr. S. K. Poddar", facility: "Gastro-Intestinal Endoscopy Center", dist: "4.1 km", exp: "25 Yrs Exp", rating: "5.0" },
-          { name: "Dr. Megha Reddy", facility: "Care Gastro Family Clinic", dist: "1.9 km", exp: "8 Yrs Exp", rating: "4.5" }
-        ],
-        medicines: [
-          { name: "Pantoprazole Gastro-Resistant (Pan-40)", dose: "1 Tab - strictly 30 mins before breakfast empty stomach" },
-          { name: "Ondansetron Hydrochloride (Ondem)", dose: "1 Tab if active vomiting tendencies feel persistent" },
-          { name: "Sucralfate Oral Suspension Suspension", dose: "2 Teaspoons before primary lunch/dinner cycles" }
-        ],
-        diet: { title: "Gastric Mucosal Cooling Routine", tips: ["Strictly non-spicy fluid diet for 24 hours.", "Consume cold diluted buttermilk without extra spices.", "Do not skip lunch timings."] }
-      };
-    }
-
-    return {
-      title: "🚨 Active Systemic Infection & Core Syndromic Warning",
-      desc: "Pathological profile signals standard active upper respiratory congestion or generic hyper-pyrexia loops. Monitoring vital baselines is critical.",
-      badgeBg: 'rgba(244, 63, 94, 0.1)', badgeBorder: '#f43f5e', badgeColor: '#f43f5e',
-      doctors: [
-        { name: "Dr. Rohan Mehra (MD, Medicine)", facility: "City Apex Multispecialty Hospital", dist: "1.1 km", exp: "12 Yrs Exp", rating: "4.8" },
-        { name: "Dr. Sarah Khan (Pulmonologist)", facility: "Respiratory Care Advanced Hub", dist: "2.5 km", exp: "14 Yrs Exp", rating: "4.9" },
-        { name: "Dr. Amit Taneja", facility: "Lifeline Family Practice Node", dist: "0.5 km", exp: "10 Yrs Exp", rating: "4.6" }
-      ],
-      medicines: [
-        { name: "Paracetamol Controlled-Release (Dolo 650)", dose: "1 Tab every 6 hours if thermal reads top 99°F" },
-        { name: "Levocetirizine + Montelukast (Montair-LC)", dose: "1 Tab before bedtime to prevent overnight lung constriction" },
-        { name: "Ambroxol Hydrochloride Cough Liquefier Syrup", dose: "10ml thrice a day after food intake" }
-      ],
-      diet: { title: "Immune Network Acceleration Plan", tips: ["Steam inhalation with eucalyptus infusion for 5 mins.", "High hydration with warm soups.", "Isolate for 48 hours to secure complete systemic downtime."] }
-    };
+  };
+  
+  recognition.onend = () => { 
+    setIsListening(false); 
+  };
+  
+  recognition.onresult = (event) => { 
+    const speechToText = event.results[0][0].transcript;
+    console.log("Suna hua text:", speechToText);
+    setTextInput(speechToText); // Yeh input box mein text daal dega
   };
 
-  const processTriageSubmit = async (overrideText = null, dynamicArray = null) => {
-    const activeText = overrideText !== null ? overrideText : textInput;
-    const activeSymptoms = dynamicArray !== null ? dynamicArray : selectedSymptoms;
+  try {
+    recognition.start();
+  } catch (e) {
+    console.error(e);
+  }
+};
+  const getClinicalData = (symptomKey) => {
+    const database = {
+      'Severe Chest Pain': {
+        severity: "CRITICAL / गंभीर स्थिति 🚨", color: "#ef4444", bg: "rgba(239, 68, 68, 0.1)",
+        doctors: [
+          { name: "Dr. Alok Misra", type: "Senior Cardiologist (हृदय रोग विशेषज्ञ)", dist: "1.2 km | Swaroop Nagar, Kanpur", time: "24/7 Emergency Available" },
+          { name: "Dr. S. K. Gupta", type: "Cardiovascular Surgeon (हार्ट सर्जन)", dist: "2.5 km | Civil Lines Medical Hub", time: "10:00 AM - 04:00 PM" }
+        ],
+        meds: ["Aspirin 325mg (Chew immediately to thin blood / चबाकर खाएं)", "Sorbitrate 5mg (Keep under tongue / जीभ के नीचे रखें)"],
+        diet: ["❌ Strictly avoid solid food or heavy liquids immediately.", "Make the patient sit or lie down in a well-ventilated space immediately."]
+      },
+      'Severe Shortness of Breath': {
+        severity: "HIGH RISK / तुरंत ध्यान दें 🚨", color: "#f97316", bg: "rgba(249, 115, 22, 0.1)",
+        doctors: [
+          { name: "Dr. Ritesh Agarwal", type: "Pulmonologist (फेफड़ा व सांस रोग विशेषज्ञ)", dist: "1.8 km | Kakadeo Crossing, Kanpur", time: "09:00 AM - 02:00 PM" },
+          { name: "Dr. Neha Sharma", type: "Critical Care Emergency Expert", dist: "3.0 km | Azad Nagar Grid", time: "24/7 Available" }
+        ],
+        meds: ["Asthalin Inhaler (Take 2 puffs immediately if prescribed)", "Budecort Respules (Administer nebulization if equipment is accessible)"],
+        diet: ["Provide small sips of warm water only if fully conscious.", "❌ Keep away from cold environments, air conditioning, or dairy items."]
+      },
+      'Severe Migraine / Headache': {
+        severity: "MODERATE / मध्यम", color: "#06b6d4", bg: "rgba(6, 182, 212, 0.1)",
+        doctors: [
+          { name: "Dr. Amit Srivastava", type: "Consultant Neurologist (न्यूरोलॉजिस्ट)", dist: "2.1 km | Mall Road Medical Plaza", time: "11:00 AM - 06:00 PM" },
+          { name: "Dr. Vikrant Kapoor", type: "Neuro Physician", dist: "4.2 km | Kidwai Nagar Hub", time: "04:00 PM - 08:00 PM" }
+        ],
+        meds: ["Paracetamol 650mg OR Naproxen 500mg (Post meals)", "Domperidone 10mg (If experiencing nausea or vomiting symptoms)"],
+        diet: ["Consume adequate fluids, electrolyte water, or fresh ORS solution.", "Rest in a completely dark, silent, and noise-free room."]
+      },
+      'Severe Lower Back Stiffness': {
+        severity: "MODERATE / मध्यम", color: "#a855f7", bg: "rgba(168, 85, 247, 0.1)",
+        doctors: [
+          { name: "Dr. Sandeep Kumar", type: "Orthopedic Surgeon (हड्डी रोग विशेषज्ञ)", dist: "0.8 km | Gumti No. 5, Kanpur", time: "10:30 AM - 05:30 PM" },
+          { name: "Dr. Megha Rai", type: "Chief Physiotherapist & Spine Expert", dist: "2.7 km | Lajpat Nagar Center", time: "08:00 AM - 12:00 PM" }
+        ],
+        meds: ["Etoricoxib 90mg (Anti-inflammatory response tablet)", "Volini Max Gel / Dynamic Heat Spray (Apply gently over the affected node)"],
+        diet: ["Take warm milk infused with organic turmeric powder.", "❌ Avoid soft couches. Rest on a firm, flat orthopedic mattress or surface."]
+      },
+      'Acid Reflux / Heartburn': {
+        severity: "LOW RISK / सामान्य समस्या", color: "#10b981", bg: "rgba(16, 185, 129, 0.1)",
+        doctors: [
+          { name: "Dr. Rajesh Verma", type: "Gastroenterologist (पेट व रोग विशेषज्ञ)", dist: "1.5 km | Aryanagar Medical Street", time: "12:00 PM - 07:00 PM" },
+          { name: "Dr. Ananya Dixit", type: "General Physician", dist: "0.5 km | Local Neighborhood Clinic", time: "09:00 AM - 09:00 PM" }
+        ],
+        meds: ["Pantoprazole 40mg (Take empty stomach with water)", "Digene / Mucaine Gel Antacid Liquid (2 spoonfuls for swift cooling action)"],
+        diet: ["Drink half a cup of cold, toned, fat-free milk slowly.", "❌ Avoid citrus fruits, caffeinated items, tea, and heavy oil blends."]
+      },
+      'Continuous Dry Cough': {
+        severity: "LOW RISK / सामान्य समस्या", color: "#eab308", bg: "rgba(234, 179, 8, 0.1)",
+        doctors: [
+          { name: "Dr. P. K. Singh", type: "ENT Specialist (कान, नाक, गला विशेषज्ञ)", dist: "2.0 km | Sharda Nagar Grid", time: "10:00 AM - 02:00 PM" },
+          { name: "Dr. Suman Rao", type: "Family Health Physician", dist: "1.1 km | Near Green Park Hub", time: "11:00 AM - 08:00 PM" }
+        ],
+        meds: ["Dry Cough Antitussive Syrup (e.g., Ascoril D - 2 teaspoons)", "Levocetirizine 5mg (One tablet before sleeping phase)"],
+        diet: ["Incorporate warm water steam with a few drops of organic ginger juice.", "❌ Avoid ice cream, cold carbonated drinks, or sour foods."]
+      }
+    };
+    return database[symptomKey] || database['Continuous Dry Cough'];
+  };
 
-    if (activeSymptoms.length === 0 && !activeText.trim()) {
+  const processTriageSubmit = () => {
+    let searchTarget = textInput.trim().toLowerCase();
+    let selectedNode = selectedSymptoms[0] || "";
+
+    if (!selectedNode && !searchTarget) {
       setShowError(true);
-      setShowResults(false);
       return;
     }
     
@@ -212,105 +231,117 @@ function App() {
     setIsLoading(true);
     setShowResults(false);
 
-    try {
-      await fetchHealthGuidance(activeSymptoms, activeText, lang);
-      const finalResponse = generateBiggerMockResponse(activeSymptoms.length > 0 ? activeSymptoms : [activeText]);
-      setApiResponse(finalResponse);
+    setTimeout(() => {
+      let finalKey = "Continuous Dry Cough"; 
+
+      if (selectedNode) {
+        if (selectedNode.includes("Chest") || selectedNode.includes("सीने")) finalKey = "Severe Chest Pain";
+        else if (selectedNode.includes("Breath") || selectedNode.includes("सांस")) finalKey = "Severe Shortness of Breath";
+        else if (selectedNode.includes("Migraine") || selectedNode.includes("सिर दर्द")) finalKey = "Severe Migraine / Headache";
+        else if (selectedNode.includes("Stiffness") || selectedNode.includes("कमर")) finalKey = "Severe Lower Back Stiffness";
+        else if (selectedNode.includes("Reflux") || selectedNode.includes("गैस")) finalKey = "Acid Reflux / Heartburn";
+      } else {
+        if (searchTarget.includes('chest') || searchTarget.includes('pain') || searchTarget.includes('seene') || searchTarget.includes('dard') || searchTarget.includes('dil')) {
+          finalKey = "Severe Chest Pain";
+        } else if (searchTarget.includes('breathe') || searchTarget.includes('saans') || searchTarget.includes('sans') || searchTarget.includes('asthma')) {
+          finalKey = "Severe Shortness of Breath";
+        } else if (searchTarget.includes('head') || searchTarget.includes('sir') || searchTarget.includes('migraine') || searchTarget.includes('maatha')) {
+          finalKey = "Severe Migraine / Headache";
+        } else if (searchTarget.includes('back') || searchTarget.includes('kamar') || searchTarget.includes('reeth') || searchTarget.includes('haddi')) {
+          finalKey = "Severe Lower Back Stiffness";
+        } else if (searchTarget.includes('acid') || searchTarget.includes('gas') || searchTarget.includes('pet') || searchTarget.includes('pait')) {
+          finalKey = "Acid Reflux / Heartburn";
+        }
+      }
+
+      setApiResponse(getClinicalData(finalKey));
       setShowResults(true);
-    } catch {
-      const finalResponse = generateBiggerMockResponse(activeSymptoms.length > 0 ? activeSymptoms : [activeText]);
-      setApiResponse(finalResponse);
-      setShowResults(true);
-    } finally {
       setIsLoading(false);
-    }
+    }, 700);
   };
 
-  const startSpeechRecognition = () => {
-    if (!globalRecognition) { alert("Speech Recognition not supported!"); return; }
-    if (isListening) { globalRecognition.stop(); return; }
-    try {
-      globalRecognition.lang = lang === 'en' ? 'en-IN' : 'hi-IN';
-      globalRecognition.onstart = () => { setIsListening(true); setShowError(false); };
-      globalRecognition.onend = () => { setIsListening(false); };
-      globalRecognition.onerror = () => {
-        setIsListening(false);
-        const forcedText = lang === 'en' ? 'severe migraine and back pain' : 'तेज़ सिरदर्द और पीठ दर्द';
-        setTextInput(forcedText);
-        processTriageSubmit(forcedText, selectedSymptoms);
-      };
-      globalRecognition.onresult = (event) => {
-        if (event.results && event.results[0]) {
-          const text = event.results[0][0].transcript;
-          setTextInput(text);
-          processTriageSubmit(text, selectedSymptoms);
-        }
-      };
-      globalRecognition.start();
-    } catch { setIsListening(false); }
-  };
-
-  const handleSymptomToggle = (symptomName) => {
-    setShowError(false);
-    if (selectedSymptoms.includes(symptomName)) {
-      setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptomName));
-    } else {
-      setSelectedSymptoms([...selectedSymptoms, symptomName]);
-    }
-  };
-
-  const clearAllSymptoms = () => {
-    setSelectedSymptoms([]);
-    setTextInput('');
-    setShowResults(false);
-    setShowError(false);
-  };
-
-  // 🚨 AMBULANCE SUBMIT LOGIC WITH SAFETY LOCKED BY SIGN IN & FIELDS
-  const triggerAmbulance = () => {
-    if (!user) {
-      setFormError('🔒 Access Denied: Please Sign In with your Gmail credentials first!');
-      return;
-    }
-    if (!dispatchDetails.patientName || !dispatchDetails.contactNo || !dispatchDetails.deliveryAddress) {
-      setFormError('⚠️ Error: Patient Name, Contact, and Live Dispatch Address are mandatory!');
-      return;
-    }
-
-    setFormError('');
-    setAmbStatus('booked');
-    setAmbTime(10);
-    const interval = setInterval(() => {
-      setAmbTime((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const handleGmailSignIn = (e) => {
+  const handleCustomAuth = async (e) => {
     e.preventDefault();
-    if (emailInput.includes('@gmail.com')) {
-      setUser({
-        email: emailInput,
-        name: emailInput.split('@')[0].toUpperCase(),
-        photo: '👤'
+    const endpoint = authMode === 'login' ? 'login' : 'signup';
+    const bodyData = authMode === 'login' 
+      ? { email: emailInput, password: passwordInput }
+      : { name: fullNameInput, email: emailInput, password: passwordInput };
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/auth/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
       });
-      setShowLoginModal(false);
-      setFormError('');
-    } else {
-      alert('Please enter a valid @gmail.com address');
-    }
+      const data = await response.json();
+      if (response.ok) {
+        setUser(data.user);
+        setDispatchDetails(prev => ({
+          ...prev,
+          patientName: data.user.name,
+          deliveryAddress: `📍 Verified GPS: [${gpsLocation}]`
+        }));
+      } else { alert(data.message); }
+    } catch (err) { alert("⚠️ Connection Error: Python backend server cluster is currently offline."); }
   };
 
-  const handleSignOut = () => {
-    setUser(null);
-    setEmailInput('');
-    setAmbStatus('idle');
-    setDispatchDetails({ patientName: '', contactNo: '', deliveryAddress: '' });
+  // Upgraded OTP Request Interceptor to grab data for the live sandbox popup
+  const sendOtpRequest = async () => {
+    const contactNo = dispatchDetails.contactNo.trim();
+    if (!contactNo || !/^[6-9]\d{9}$/.test(contactNo)) {
+      setFormError('⚠️ Structure Error: Please declare a 10-digit Indian Mobile sequence.');
+      return;
+    }
+    try {
+      const response = await fetch('http://localhost:5000/api/orders/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contactNo })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setFormError('');
+        setOtpStep(true);
+        // Setting backend's dynamic code inside popup component state
+        setLiveDemoAlert(data.demoOtp); 
+      } else { setFormError(data.message); }
+    } catch { setFormError('Communication link interrupted.'); }
+  };
+
+  const verifyOtpAndBook = async () => {
+    if(!otpInput.trim() || otpInput.length !== 4) {
+      alert("🛑 Access Denied: 4-digit code format required.");
+      return;
+    }
+    try {
+      const response = await fetch('http://localhost:5000/api/orders/verify-and-book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userEmail: user.email,
+          patientName: dispatchDetails.patientName,
+          contactNo: dispatchDetails.contactNo,
+          deliveryAddress: dispatchDetails.deliveryAddress,
+          otp: otpInput
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setFormError('');
+        setOtpStep(false);
+        setLiveDemoAlert(null); // Clearing toast popup upon correct login 
+        setAmbStatus('booked');
+        alert("✅ Security Cleared. Emergency Ambulance Grid Dispatched.");
+        const interval = setInterval(() => {
+          setAmbTime((prev) => { if (prev <= 1) { clearInterval(interval); return 0; } return prev - 1; });
+        }, 1000);
+      } else { alert(`🛑 Validation Alert: ${data.message}`); }
+    } catch { alert("Network validation error occurred."); }
+  };
+
+  const handleSymptomToggle = (symptomName) => { 
+    setSelectedSymptoms([symptomName]); 
+    setTextInput(symptomName);
   };
 
   const theme = {
@@ -318,117 +349,134 @@ function App() {
     textMain: isDarkMode ? '#ffffff' : '#0f172a',
     textSub: isDarkMode ? '#94a3b8' : '#475569',
     textMuted: isDarkMode ? '#475569' : '#94a3b8',
-    cardBg: isDarkMode ? 'rgba(15,23,42,0.4)' : 'rgba(255,255,255,0.95)',
-    cardBorder: isDarkMode ? 'rgba(30,41,59,0.8)' : 'rgba(226,232,240,0.9)',
+    cardBg: isDarkMode ? 'rgba(15,23,42,0.6)' : 'rgba(255,255,255,0.98)',
+    cardBorder: isDarkMode ? 'rgba(30,41,59,0.9)' : 'rgba(226,232,240,1)',
     innerInput: isDarkMode ? '#030712' : '#ffffff',
     innerInputText: isDarkMode ? '#ffffff' : '#0f172a',
     innerInputColor: isDarkMode ? '#1e293b' : '#cbd5e1',
-    bottomBox: isDarkMode ? '#020617' : '#f1f5f9',
-    bottomBoxBorder: isDarkMode ? '#1e293b' : '#e2e8f0'
   };
 
   const s = {
-    container: { backgroundColor: theme.bg, color: theme.textSub, minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px' },
+    container: { backgroundColor: theme.bg, color: theme.textSub, minHeight: '100vh', fontFamily: 'system-ui, sans-serif', paddingBottom: '80px' },
     wrapper: { maxWidth: '1200px', margin: '0 auto', padding: '0 24px' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 0' },
-    navBar: { display: 'flex', gap: '12px', margin: '20px 0 30px 0' },
-    navBtn: (isActive, color) => ({ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '14px', backgroundColor: isActive ? color : theme.cardBg, color: isActive ? '#fff' : theme.textSub, transition: 'all 0.2s' }),
-    searchSection: { backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: '24px', padding: '32px', display: 'flex', gap: '24px', alignItems: 'center', marginBottom: '36px' },
-    micBlock: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', minWidth: '130px' },
-    micBtn: { height: '60px', width: '60px', borderRadius: '50%', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer' },
+    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 0', borderBottom: `1px solid ${theme.cardBorder}` },
+    navBar: { display: 'flex', gap: '14px', margin: '24px 0' },
+    navBtn: (isActive, color) => ({ flex: 1, padding: '16px', borderRadius: '14px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '15px', backgroundColor: isActive ? color : theme.cardBg, color: isActive ? '#fff' : theme.textSub, transition: 'all 0.2s ease' }),
+    searchSection: { backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: '24px', padding: '32px', display: 'flex', gap: '24px', alignItems: 'center', marginBottom: '36px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' },
+    micBlock: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', minWidth: '160px' },
+    micBtn: (listening) => ({ height: '64px', width: '64px', borderRadius: '50%', border: 'none', backgroundColor: listening ? '#ef4444' : '#06b6d4', color: '#fff', fontSize: '24px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 4px 12px rgba(6,182,212,0.3)' }),
     inputContainer: { flex: 1, display: 'flex', alignItems: 'center', position: 'relative' },
-    input: { width: '100%', backgroundColor: theme.innerInput, border: `1px solid ${theme.innerInputColor}`, borderRadius: '16px', padding: '18px 120px 18px 20px', fontSize: '15px', color: theme.innerInputText, outline: 'none', boxSizing: 'border-box' },
-    inlineSearchBtn: { position: 'absolute', right: '12px', background: 'linear-gradient(135deg, #06b6d4, #10b981)', border: 'none', borderRadius: '12px', color: '#fff', padding: '10px 20px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' },
-    catGrid: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' },
-    catBtn: (isActive) => ({ padding: '12px 20px', fontSize: '13px', borderRadius: '14px', cursor: 'pointer', border: isActive ? '1px solid #06b6d4' : `1px solid ${theme.cardBorder}`, backgroundColor: isActive ? 'rgba(6,182,212,0.12)' : theme.cardBg, color: isActive ? '#06b6d4' : theme.textSub, fontWeight: 600 }),
+    input: { width: '100%', backgroundColor: theme.innerInput, border: `1px solid ${theme.innerInputColor}`, borderRadius: '16px', padding: '18px 140px 18px 20px', fontSize: '16px', color: theme.innerInputText, outline: 'none', boxSizing: 'border-box' },
+    inlineSearchBtn: { position: 'absolute', right: '12px', background: 'linear-gradient(135deg, #06b6d4, #10b981)', border: 'none', borderRadius: '12px', color: '#fff', padding: '12px 24px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' },
+    catGrid: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '24px' },
+    catBtn: (isActive) => ({ padding: '14px 24px', fontSize: '14px', borderRadius: '16px', cursor: 'pointer', border: isActive ? '2px solid #06b6d4' : `1px solid ${theme.cardBorder}`, backgroundColor: isActive ? 'rgba(6,182,212,0.15)' : theme.cardBg, color: isActive ? '#06b6d4' : theme.textSub, fontWeight: 700 }),
     symGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '30px' },
-    symCard: (isSelected) => ({ padding: '18px', borderRadius: '14px', border: isSelected ? '1px solid #06b6d4' : `1px solid ${theme.cardBorder}`, backgroundColor: isSelected ? 'rgba(6,182,212,0.04)' : theme.cardBg, cursor: 'pointer', transition: 'all 0.15s' }),
-    submitBtn: { background: 'linear-gradient(90deg, #06b6d4, #10b981)', color: '#fff', border: 'none', fontWeight: '800', padding: '16px 48px', borderRadius: '14px', cursor: 'pointer', display: 'block', margin: '32px auto', fontSize: '15px' },
-    loadingContainer: { textAlign: 'center', padding: '40px', color: '#06b6d4', fontWeight: '700', fontSize: '15px' }
+    symCard: (isSelected) => ({ padding: '20px', borderRadius: '16px', border: isSelected ? '2px solid #06b6d4' : `1px solid ${theme.cardBorder}`, backgroundColor: isSelected ? 'rgba(6,182,212,0.06)' : theme.cardBg, cursor: 'pointer', transition: 'all 0.15s ease' })
   };
+
+  if (!user) {
+    return (
+      <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px' }}>
+        <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', width: '100%', maxWidth: '440px', borderRadius: '28px', padding: '40px', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+            <span style={{ fontSize: '48px' }}>🩺</span>
+            <h2 style={{ fontSize: '28px', margin: '12px 0 6px 0', fontWeight: '800', letterSpacing: '-0.5px' }}>AyuRoute Gateway</h2>
+            <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0 }}>Secure Healthcare Node Access</p>
+          </div>
+          <form onSubmit={handleCustomAuth}>
+            {authMode === 'signup' && (
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#cbd5e1' }}>Full Name / पूरा नाम</label>
+                <input type="text" required placeholder="Chetan Sharma" value={fullNameInput} onChange={(e) => setFullNameInput(e.target.value)} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #334155', background: '#030712', color: '#fff', boxSizing: 'border-box' }} />
+              </div>
+            )}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#cbd5e1' }}>Email Address / ईमेल</label>
+              <input type="email" required placeholder="name@example.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #334155', background: '#030712', color: '#fff', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '26px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#cbd5e1' }}>Password / पासवर्ड</label>
+              <input type="password" required placeholder="••••••••" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #334155', background: '#030712', color: '#fff', boxSizing: 'border-box' }} />
+            </div>
+            <button type="submit" style={{ width: '100%', padding: '16px', background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none', color: '#fff', borderRadius: '14px', fontWeight: '800', cursor: 'pointer', fontSize: '16px' }}>
+              {authMode === 'login' ? '🔑 Sign In / लॉगिन करें' : '🚀 Register / अकाउंट बनाएं'}
+            </button>
+          </form>
+          <p style={{ textAlign: 'center', fontSize: '14px', color: '#94a3b8', marginTop: '24px', marginBottom: 0 }}>
+            {authMode === 'login' ? "Naya account chahiye? " : "Pehle se account hai? "}
+            <span onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} style={{ color: '#06b6d4', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}>
+              {authMode === 'login' ? 'Register Here' : 'Log In Here'}
+            </span>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={s.container}>
+      {/* ⚡ VISUAL OVERLAY CONTAINER FOR EVALUATORS AND RECRUITERS */}
+      {liveDemoAlert && (
+        <div style={{ position: 'fixed', top: '24px', right: '24px', backgroundColor: '#1e1b4b', border: '2px solid #818cf8', borderRadius: '16px', padding: '20px', zIndex: 99999, width: '320px', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', ease: 'all 0.3s' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '20px' }}>🔒</span>
+            <strong style={{ color: '#fff', fontSize: '14px' }}>AyuRoute Live Sandbox Gateway</strong>
+          </div>
+          <p style={{ color: '#93c5fd', fontSize: '12px', margin: '0 0 12px 0', lineHeight: '1.4' }}>
+            [DEMO ACTIVE] Dynamic security token transmitted successfully to sandbox node pipeline.
+          </p>
+          <div style={{ background: '#312e81', borderRadius: '8px', padding: '10px', textAlign: 'center', border: '1px solid #4338ca' }}>
+            <span style={{ color: '#f43f5e', fontWeight: '900', fontSize: '22px', letterSpacing: '4px' }}>{liveDemoAlert}</span>
+          </div>
+          <p style={{ color: '#a5b4fc', fontSize: '10px', textAlign: 'right', margin: '6px 0 0 0' }}>Status: Production Emulation Online</p>
+        </div>
+      )}
+
       <div style={s.wrapper}>
-        
-        {/* Header Block WITH REAL-TIME GMAIL AUTH */}
         <header style={s.header}>
-          <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
-            <div style={{fontSize:'26px'}}>🩺</div>
+          <div style={{display:'flex', alignItems:'center', gap:'14px'}}>
+            <div style={{fontSize:'32px'}}>🩺</div>
             <div>
-              <h1 style={{fontSize:'20px', color:theme.textMain, margin:0, letterSpacing: '-0.5px'}}>{t.brand}</h1>
-              <p style={{fontSize:'12px', color:theme.textMuted, margin:0}}>{t.subBrand}</p>
+              <h1 style={{fontSize:'24px', color:theme.textMain, margin:0, fontWeight:'800'}}>{t.brand}</h1>
+              <p style={{fontSize:'13px', color:theme.textMuted, margin:0}}>{t.subBrand}</p>
             </div>
           </div>
-          <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-            <button onClick={() => setIsDarkMode(!isDarkMode)} style={{padding:'8px 14px', borderRadius:'10px', cursor:'pointer', border:`1px solid ${theme.cardBorder}`, background:theme.cardBg, color:theme.textMain, fontWeight: 600}}>{isDarkMode ? '☀️ Light' : '🌙 Dark'}</button>
-            <button onClick={() => setLang(lang === 'en' ? 'hi' : 'en')} style={{padding:'8px 14px', borderRadius:'10px', cursor:'pointer', border:`1px solid ${theme.cardBorder}`, background:theme.cardBg, color:theme.textMain, fontWeight: 600}}>🌐 {lang === 'en' ? 'English' : 'हिन्दी'}</button>
-            
-            {/* GMAIL CONTROL LOG IN / OUT HUB */}
-            {user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(16,185,129,0.12)', padding: '6px 12px', borderRadius: '12px', border: '1px solid #10b981' }}>
-                <span style={{ fontSize: '13px', color: '#10b981', fontWeight: '700' }}>{user.photo} {user.name}</span>
-                <button onClick={handleSignOut} style={{ padding: '4px 8px', background: '#ef4444', border: 'none', color: '#fff', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: '700' }}>Sign Out</button>
-              </div>
-            ) : (
-              <button onClick={() => setShowLoginModal(true)} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #06b6d4, #0891b2)', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}>🔑 Gmail Login</button>
-            )}
+          <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
+            <button onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')} style={{padding:'10px 16px', borderRadius:'12px', cursor:'pointer', fontWeight:'bold', border:'1px solid #06b6d4', background:'rgba(6,182,212,0.1)', color:'#06b6d4', fontSize:'13px'}}>
+              {lang === 'hi' ? 'English Translate' : 'हिंदी में बदलें'}
+            </button>
+            <button onClick={() => setIsDarkMode(!isDarkMode)} style={{padding:'10px 16px', borderRadius:'12px', cursor:'pointer', border:`1px solid ${theme.cardBorder}`, background:theme.cardBg, color:theme.textMain, fontSize:'13px'}}>{isDarkMode ? '☀️ Light' : '🌙 Dark'}</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(16,185,129,0.12)', padding: '8px 14px', borderRadius: '12px', border: '1px solid #10b981' }}>
+              <span style={{ fontSize: '13px', color: '#10b981', fontWeight: '800' }}>👤 {user.name}</span>
+              <button onClick={() => setUser(null)} style={{ padding: '4px 8px', background: '#ef4444', border: 'none', color: '#fff', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight:'bold' }}>Logout</button>
+            </div>
           </div>
         </header>
 
-        {/* NAVIGATION HUB */}
         <div style={s.navBar}>
-          <button onClick={() => setActiveTab('triage')} style={s.navBtn(activeTab === 'triage', '#06b6d4')}>🔬 Comprehensive AI Symptom Triage</button>
-          <button onClick={() => setActiveTab('pharmacy')} style={s.navBtn(activeTab === 'pharmacy', '#10b981')}>💊 Hyperlocal 10-Min Pharmacy Store</button>
-          <button onClick={() => setActiveTab('ambulance')} style={s.navBtn(activeTab === 'ambulance', '#ef4444')}>🚨 Tactical Ambulance Dispatch Radar</button>
+          <button onClick={() => setActiveTab('triage')} style={s.navBtn(activeTab === 'triage', '#06b6d4')}>🔬 AI Symptom Guide & Location Radar</button>
+          <button onClick={() => setActiveTab('pharmacy')} style={s.navBtn(activeTab === 'pharmacy', '#10b981')}>💊 10-Min Pharmacy</button>
+          <button onClick={() => setActiveTab('ambulance')} style={s.navBtn(activeTab === 'ambulance', '#ef4444')}>🚨 Ambulance Radar</button>
         </div>
 
-        {/* LOGIN MODAL BOX */}
-        {showLoginModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
-            <div style={{ background: '#0f172a', border: '1px solid #334155', padding: '30px', borderRadius: '20px', width: '360px', color: '#fff' }}>
-              <h3 style={{ margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>🌐 Google Account Gateway</h3>
-              <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>Sign in with your enterprise Gmail to activate immediate dispatch networks.</p>
-              <form onSubmit={handleGmailSignIn}>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>Gmail Address</label>
-                <input type="email" required placeholder="username@gmail.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #334155', background: '#030712', color: '#fff', marginBottom: '20px', boxSizing: 'border-box' }} />
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={() => setShowLoginModal(false)} style={{ flex: 1, padding: '10px', background: '#334155', border: 'none', color: '#fff', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
-                  <button type="submit" style={{ flex: 1, padding: '10px', background: '#06b6d4', border: 'none', color: '#fff', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>Sign In</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* ──────── TAB 1: ALL SYMPTOMS & HEAVY DATA TRIAGE (FULLY RESTORED) ──────── */}
         {activeTab === 'triage' && (
           <div>
-            <div style={{textAlign:'center', margin:'30px 0 40px 0'}}>
-              <h2 style={{fontSize:'42px', fontWeight: 800, color:theme.textMain, margin:'0 0 12px 0', letterSpacing: '-1px'}}>{t.brand} System</h2>
-              <p style={{maxWidth:'650px', margin:'0 auto', fontSize:'14px', lineHeight: '1.6'}}>{t.tagline}</p>
-            </div>
-
+            <p style={{ color: theme.textMain, fontSize: '16px', marginBottom: '24px', lineHeight:'1.5' }}>{t.tagline}</p>
             <div style={s.searchSection}>
               <div style={s.micBlock}>
-                <button onClick={startSpeechRecognition} style={{...s.micBtn, background: isListening ? '#f43f5e' : '#06b6d4'}}>
-                  {isListening ? '🛑' : '🎤'}
-                </button>
-                <span style={{fontSize:'12px', fontWeight: 600}}>{isListening ? 'Listening...' : t.micText}</span>
+                <button onClick={startSpeechRecognition} style={s.micBtn(isListening)}>{isListening ? '🛑' : '🎤'}</button>
+                <span style={{fontSize:'12px', fontWeight:'bold', color: isListening ? '#ef4444' : theme.textMain}}>{isListening ? t.micListening : t.micText}</span>
               </div>
-              
               <div style={s.inputContainer}>
                 <input type="text" value={textInput} onChange={(e) => setTextInput(e.target.value)} placeholder={t.inputPlaceholder} style={s.input} />
-                <button onClick={() => processTriageSubmit(null, null)} style={s.inlineSearchBtn}>🔍 Query AI</button>
+                <button onClick={processTriageSubmit} style={s.inlineSearchBtn}>🔍 Search AI</button>
               </div>
             </div>
 
-            <div style={{fontSize: 13, fontWeight: 700, color: theme.textMuted, marginBottom: 10}}>{t.categoryLabel}</div>
+            <div style={{ marginBottom: '14px', fontWeight: 'bold', color: theme.textMain, fontSize:'15px' }}>{t.categoryLabel}</div>
             <div style={s.catGrid}>
               {CATEGORIES.map(cat => (
-                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} style={s.catBtn(activeCategory === cat.id)}>
-                  {cat.icon} {cat.label[lang]}
-                </button>
+                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} style={s.catBtn(activeCategory === cat.id)}>{cat.icon} {cat.label[lang]}</button>
               ))}
             </div>
 
@@ -437,150 +485,109 @@ function App() {
                 const isSelected = selectedSymptoms.includes(symptom.name[lang]);
                 return (
                   <div key={symptom.id} onClick={() => handleSymptomToggle(symptom.name[lang])} style={s.symCard(isSelected)}>
-                    <span style={{fontSize:'14px', fontWeight:'700', color:theme.textMain}}>{symptom.name[lang]}</span>
+                    <span style={{fontSize:'15px', fontWeight:'700', color:theme.textMain}}>{symptom.name[lang]}</span>
                   </div>
                 );
               })}
             </div>
 
-            {selectedSymptoms.length > 0 && (
-              <div style={{backgroundColor:theme.cardBg, border:`1px solid ${theme.cardBorder}`, borderRadius:'16px', padding:'20px', marginBottom:'24px'}}>
-                <div style={{display:'flex', justifyContent:'space-between', fontSize:'13px', fontWeight:'700', marginBottom:'12px'}}>
-                  <span style={{color: theme.textMain}}>Selected Diagnostic Markers ({selectedSymptoms.length})</span>
-                  <span onClick={clearAllSymptoms} style={{color:'#f43f5e', cursor:'pointer'}}>Reset Matrix</span>
-                </div>
-                <div style={{display:'flex', flexWrap:'wrap', gap:'10px'}}>
-                  {selectedSymptoms.map((sym, i) => (
-                    <span key={i} style={{backgroundColor:'rgba(6,182,212,0.1)', border:'1px solid rgba(6,182,212,0.25)', color:'#06b6d4', padding:'6px 14px', borderRadius:'10px', fontSize:'12px', fontWeight:'700'}}>{sym}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {showError && <div style={{backgroundColor:'rgba(244,63,94,0.1)', color:'#f43f5e', padding:'12px', borderRadius:'10px', textAlign:'center', fontWeight:'700'}}>{t.errorText}</div>}
-            
-            <button onClick={() => processTriageSubmit(null, null)} style={s.submitBtn}>🛡️ {t.getGuidance}</button>
-
-            {isLoading && <div style={s.loadingContainer}><div style={{fontSize:'34px', marginBottom:'12px'}}>⚡</div>{t.loadingText}</div>}
+            {showError && <div style={{ color: '#ef4444', marginBottom: '20px', fontWeight: 'bold' }}>{t.errorText}</div>}
+            {isLoading && <div style={{ color: '#06b6d4', marginBottom: '20px', fontWeight:'bold' }}>{t.loadingText}</div>}
 
             {showResults && apiResponse && (
-              <div style={{marginTop: '40px', borderTop: `1px solid ${theme.cardBorder}`, paddingTop: '30px'}}>
+              <div style={{ backgroundColor: theme.cardBg, border: `2px solid ${apiResponse.color}`, borderRadius: '24px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '28px', boxShadow:'0 10px 25px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0, color: theme.textMain, fontSize: '22px', fontWeight:'800' }}>📋 Real-Time Health Diagnostic Radar</h3>
+                  <span style={{ padding: '8px 20px', borderRadius: '999px', background: apiResponse.bg, color: apiResponse.color, fontWeight: '900', fontSize: '14px', border: `1px solid ${apiResponse.color}` }}>{apiResponse.severity}</span>
+                </div>
                 
-                <div style={{backgroundColor: apiResponse.badgeBg, border:`1px solid ${apiResponse.badgeBorder}`, borderRadius:'16px', padding:'22px', marginBottom:'30px'}}>
-                  <h4 style={{margin:0, color: apiResponse.badgeColor, fontSize:'17px', fontWeight:'800'}}>{apiResponse.title}</h4>
-                  <p style={{margin:'6px 0 0 0', fontSize:'13.5px', color:theme.textMain, lineHeight: '1.5'}}>{apiResponse.desc}</p>
+                <hr style={{ border: 'none', borderTop: `1px solid ${theme.cardBorder}`, margin: 0 }} />
+                
+                <div>
+                  <h4 style={{ color: apiResponse.color, margin: '0 0 16px 0', fontSize: '18px', fontWeight:'700' }}>{t.recommendedDocs}</h4>
+                  <div style={{ overflowX: 'auto', borderRadius: '14px', border: `1px solid ${theme.cardBorder}` }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', backgroundColor: theme.innerInput }}>
+                      <thead>
+                        <tr style={{ borderBottom: `2px solid ${theme.cardBorder}`, background: isDarkMode ? '#1e293b' : '#f1f5f9' }}>
+                          <th style={{ padding: '14px', color: theme.textMain, fontSize: '14px' }}>{t.tableDocName}</th>
+                          <th style={{ padding: '14px', color: theme.textMain, fontSize: '14px' }}>{t.tableSpecialty}</th>
+                          <th style={{ padding: '14px', color: theme.textMain, fontSize: '14px' }}>{t.tableDistance}</th>
+                          <th style={{ padding: '14px', color: theme.textMain, fontSize: '14px' }}>{t.tableTiming}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {apiResponse.doctors.map((doc, idx) => (
+                          <tr key={idx} style={{ borderBottom: `1px solid ${theme.cardBorder}` }}>
+                            <td style={{ padding: '14px', fontWeight: '700', color: theme.textMain }}>{doc.name}</td>
+                            <td style={{ padding: '14px', color: theme.textSub }}>{doc.type}</td>
+                            <td style={{ padding: '14px', color: '#06b6d4', fontWeight: '600' }}>📍 {doc.dist}</td>
+                            <td style={{ padding: '14px', color: '#10b981', fontSize: '13px' }}>⏳ {doc.time}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
-                <h3 style={{fontSize:'13px', color:theme.textMuted, textTransform:'uppercase', letterSpacing: '1px', marginBottom:'16px'}}>📋 {t.recommendedDocs}</h3>
-                <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'16px', marginBottom:'35px'}}>
-                  {apiResponse.doctors?.map((doc, idx) => (
-                    <div key={idx} style={{backgroundColor:theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius:'16px', padding:'18px'}}>
-                      <h4 style={{margin:0, color:theme.textMain, fontSize: 14}}>{doc.name}</h4>
-                      <p style={{fontSize:'12px', color:'#06b6d4', margin:'4px 0', fontWeight: 600}}>{doc.facility}</p>
-                      <div style={{display:'flex', justifyContent: 'space-between', fontSize:'11px', color:theme.textSub, marginTop: 8}}>
-                        <span>{doc.exp}</span>
-                        <span style={{color: '#eab308', fontWeight: 700}}>⭐ {doc.rating}</span>
-                      </div>
-                      <div style={{fontSize: '11px', color: '#10b981', marginTop: 4, fontWeight: 700}}>📍 Distance: {doc.dist}</div>
-                    </div>
-                  ))}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  <div style={{ background: isDarkMode ? 'rgba(16,185,129,0.05)' : '#f0fdf4', padding: '24px', borderRadius: '16px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <h4 style={{ color: '#10b981', margin: '0 0 14px 0', fontSize: '18px', fontWeight:'700' }}>{t.suggestedMeds}</h4>
+                    <ul style={{ margin: 0, paddingLeft: '20px', color: theme.textMain, lineHeight: '1.8' }}>
+                      {apiResponse.meds.map((med, idx) => <li key={idx} style={{fontWeight:'600'}}>{med}</li>)}
+                    </ul>
+                  </div>
+
+                  <div style={{ background: isDarkMode ? 'rgba(234,179,8,0.05)' : '#fefce8', padding: '24px', borderRadius: '16px', border: '1px solid rgba(234,179,8,0.2)' }}>
+                    <h4 style={{ color: '#eab308', margin: '0 0 14px 0', fontSize: '18px', fontWeight:'700' }}>{t.suggestedDiet}</h4>
+                    <ul style={{ margin: 0, paddingLeft: '20px', color: theme.textMain, lineHeight: '1.8' }}>
+                      {apiResponse.diet.map((dietItem, idx) => <li key={idx}>{dietItem}</li>)}
+                    </ul>
+                  </div>
                 </div>
 
-                <h3 style={{fontSize:'13px', color:theme.textMuted, textTransform:'uppercase', letterSpacing: '1px', marginBottom:'16px'}}>💊 {t.suggestedMeds}</h3>
-                <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'16px', marginBottom:'35px'}}>
-                  {apiResponse.medicines?.map((med, idx) => (
-                    <div key={idx} style={{backgroundColor:theme.cardBg, border: `1px solid ${theme.cardBorder}`, padding:'16px', borderRadius:'14px', display:'flex', flexDirection:'column', justifyContent:'space-between'}}>
-                      <div>
-                        <div style={{fontWeight:'700', color: theme.textMain, fontSize: 13.5}}>{med.name}</div>
-                        <div style={{fontSize:'11.5px', color:theme.textSub, marginTop:'6px', lineHeight: '1.4'}}>{med.dose}</div>
-                      </div>
-                      <button onClick={() => setActiveTab('pharmacy')} style={{width: '100%', marginTop: 12, padding:'6px 0', background:'rgba(16,185,129,0.15)', color:'#10b981', border:'1px solid rgba(16,185,129,0.2)', borderRadius:'6px', fontSize:'11px', fontWeight: 700, cursor:'pointer'}}>Order From Node</button>
-                    </div>
-                  ))}
+                <div style={{ fontSize: '13px', color: theme.textMuted, fontStyle: 'italic', background: theme.innerInput, padding: '14px', borderRadius: '10px', borderLeft: '4px solid #ef4444' }}>
+                  {t.disclaimer}
                 </div>
-
-                <h3 style={{fontSize:'13px', color:theme.textMuted, textTransform:'uppercase', letterSpacing: '1px', marginBottom:'16px'}}>🥗 AI Customized Lifestyle Guidelines</h3>
-                <div style={{backgroundColor:theme.cardBg, border: `1px solid ${theme.cardBorder}`, padding:'20px', borderRadius:'16px'}}>
-                  <strong style={{fontSize: 13, color: theme.textMain}}>{apiResponse.diet?.title}</strong>
-                  <ul style={{margin:'10px 0 0 0', paddingLeft:'20px', color:theme.textMain, fontSize:'13px'}}>
-                    {apiResponse.diet?.tips.map((tip, idx) => <li key={idx} style={{marginBottom:'8px'}}>{tip}</li>)}
-                  </ul>
-                </div>
-
               </div>
             )}
           </div>
         )}
 
-        {/* ──────── TAB 2: PHARMACY STORE RENDER ──────── */}
         {activeTab === 'pharmacy' && <Pharmacy isDark={isDarkMode} />}
 
-        {/* ──────── TAB 3: SECURE AMBULANCE SYSTEM WITH LOCATION, ADDRESS & NAME ──────── */}
         {activeTab === 'ambulance' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginTop: '20px' }}>
-            
-            {/* LEFT SIDE: PATIENT DATA & LIVE GEOLOCATION TARGETS */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
             <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: '24px', padding: '30px' }}>
-              <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, display: 'flex', alignItems: 'center', gap: '8px' }}>🗺️ Emergency Target Coordinates</h3>
-              <p style={{ fontSize: '13px', margin: '0 0 20px 0' }}>Enter dispatch instructions. Ground ambulances use this payload parameters to execute swift 10-minute navigation routing.</p>
-              
+              <h3>🗺️ Emergency Dispatch Node Parameters</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: theme.textMain, marginBottom: '6px' }}>Patient Full Name</label>
-                  <input type="text" placeholder="e.g., Ramesh Kumar" value={dispatchDetails.patientName} onChange={(e) => setDispatchDetails({...dispatchDetails, patientName: e.target.value})} disabled={ambStatus==='booked'} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText, border: `1px solid ${theme.innerInputColor}`, boxSizing:'border-box' }} />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: theme.textMain, marginBottom: '6px' }}>Emergency Contact Number</label>
-                  <input type="tel" placeholder="e.g., +91 9988776655" value={dispatchDetails.contactNo} onChange={(e) => setDispatchDetails({...dispatchDetails, contactNo: e.target.value})} disabled={ambStatus==='booked'} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText, border: `1px solid ${theme.innerInputColor}`, boxSizing:'border-box' }} />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: theme.textMain, marginBottom: '6px' }}>Full Dispatch Address & Nearby Landmark</label>
-                  <textarea rows="3" placeholder="Flat/House No, Building, Area Colony, Near City Landmark..." value={dispatchDetails.deliveryAddress} onChange={(e) => setDispatchDetails({...dispatchDetails, deliveryAddress: e.target.value})} disabled={ambStatus==='booked'} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText, border: `1px solid ${theme.innerInputColor}`, boxSizing:'border-box', fontFamily: 'sans-serif' }}></textarea>
-                </div>
-              </div>
-
-              {formError && (
-                <div style={{ marginTop: '16px', padding: '12px', borderRadius: '10px', background: 'rgba(244,63,94,0.1)', color: '#f43f5e', fontSize: '12px', fontWeight: '700', textAlign: 'center' }}>
-                  {formError}
-                </div>
-              )}
-            </div>
-
-            {/* RIGHT SIDE: SECURE TRACKING DISPATCH HUB */}
-            <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: '24px', padding: '30px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-              <span style={{ fontSize: '54px' }}>🚨</span>
-              <h2 style={{ color: '#ef4444', margin: '14px 0 6px 0' }}>Advanced Trauma Ambulance Radar</h2>
-              <p style={{ fontSize: '13px', maxWidth: 400, margin: '0 auto 24px auto' }}>Deploys the nearest medical ICU response cruiser with oxygen matrices.</p>
-
-              {/* SECURITY GATES CHECK */}
-              {!user ? (
-                <div style={{ padding: '20px', borderRadius: '16px', background: 'rgba(234,179,8,0.1)', border: '1px solid #eab308', color: '#eab308', fontSize: '13px', fontWeight: '600' }}>
-                  🔒 SECURE ACCESS LOCKED: Please tap the <strong>"🔑 Gmail Login"</strong> widget in the top navigation panel to authorize telemetry dispatchers.
-                </div>
-              ) : ambStatus === 'booked' ? (
-                <div style={{ background: '#020617', border: '2px solid #ef4444', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '340px', boxSizing: 'border-box' }}>
-                  <div style={{ fontSize: '38px', fontWeight: 900, color: '#ef4444', fontFamily: 'monospace' }}>{ambTime}:00 Mins</div>
-                  <div style={{ fontSize: '12px', color: '#10b981', marginTop: '8px', fontWeight: '700' }}>📡 GPS RADAR STREAM LIVE</div>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '12px', textAlign: 'left', borderTop: '1px solid #1e293b', paddingTop: '10px', lineHeight: '1.5' }}>
-                    <strong>Patient Profile:</strong> {dispatchDetails.patientName}<br/>
-                    <strong>Comms Hotline:</strong> {dispatchDetails.contactNo}<br/>
-                    <strong>Target Grid Address:</strong> {dispatchDetails.deliveryAddress}
+                <input type="text" disabled={otpStep} value={dispatchDetails.patientName} onChange={(e) => setDispatchDetails({...dispatchDetails, patientName: e.target.value})} placeholder="Patient Name" style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText }} />
+                <input type="tel" disabled={otpStep} placeholder="Mobile Number (e.g. 9876543210)" value={dispatchDetails.contactNo} onChange={(e) => setDispatchDetails({...dispatchDetails, contactNo: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText }} />
+                <textarea rows="3" disabled={otpStep} placeholder="Address" value={dispatchDetails.deliveryAddress} onChange={(e) => setDispatchDetails({...dispatchDetails, deliveryAddress: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText }}></textarea>
+                
+                {otpStep && (
+                  <div style={{ borderTop: '2px dashed #06b6d4', paddingTop: '15px', marginTop: '10px' }}>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#06b6d4', marginBottom: '6px' }}>🔑 Enter 4-Digit Security Token:</label>
+                    <input type="text" maxLength="4" placeholder="XXXX" value={otpInput} onChange={(e) => setOtpInput(e.target.value)} style={{ width: '100%', padding: '12px', letterSpacing: '8px', fontSize: '18px', textAlign: 'center', borderRadius: '10px', background: '#0f172a', color: '#06b6d4', border: '1px solid #06b6d4' }} />
                   </div>
-                </div>
-              ) : (
-                <button onClick={triggerAmbulance} style={{ padding: '18px 40px', background: 'linear-gradient(135deg, #ef4444, #b91c1c)', border: 'none', color: '#fff', borderRadius: '14px', fontWeight: 800, cursor: 'pointer', fontSize: '16px', boxShadow: '0 4px 14px rgba(239,68,68,0.3)' }}>⚡ Launch Trauma Ambulance (₹850)</button>
-              )}
+                )}
+              </div>
+              {formError && <div style={{ color: '#ef4444', marginTop: '10px', fontWeight: 'bold' }}>{formError}</div>}
             </div>
 
+            <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: '24px', padding: '30px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+              <span style={{ fontSize: '54px' }}>🚨</span>
+              <h2>Emergency Ambulance Grid</h2>
+              
+              {ambStatus === 'booked' ? (
+                <div style={{ color: '#ef4444', fontWeight: '800', background: 'rgba(239,68,68,0.1)', padding: '15px', borderRadius: '12px', border: '1px solid #ef4444', width: '100%' }}>📡 DISPATCH SECURED! LIVE RADAR TRACKING: {ambTime}m</div>
+              ) : otpStep ? (
+                <button onClick={verifyOtpAndBook} style={{ padding: '14px 28px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '800', width: '100%' }}>🔐 Verify OTP & Confirm Route</button>
+              ) : (
+                <button onClick={sendOtpRequest} style={{ padding: '14px 28px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '800', width: '100%' }}>⚡ Request Verification OTP</button>
+              )}
+            </div>
           </div>
         )}
-
-        {/* Disclaimer Policy */}
-        <div style={{backgroundColor:theme.bottomBox, border: `1px solid ${theme.bottomBoxBorder}`, borderRadius:'12px', padding:'16px', textAlign:'center', fontSize:'11px', color:'#b45309', marginTop:'40px'}}>
-          {t.disclaimer}
-        </div>
 
       </div>
     </div>

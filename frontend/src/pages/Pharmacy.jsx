@@ -79,69 +79,69 @@ export default function Pharmacy({ isDark = true }) {
 
   return (
     <div style={{ padding: '20px 0', fontFamily: 'system-ui, sans-serif' }}>
-      
+    
       {/* 🚴 LIVE TRACKING COUNTDOWN PANEL */}
-      {orderStatus === 'tracking' && (
+    {orderStatus === 'tracking' && (
         <div style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', borderRadius: 16, padding: 20, marginBottom: 24, boxShadow: '0 10px 20px -5px rgba(16,185,129,0.3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: 18 }}>⚡ Hyperlocal 10-Min Flash Delivery Active</h3>
-              <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: 13 }}>{getTrackingStatus()}</p>
+            <h3 style={{ margin: 0, fontSize: 18 }}>⚡ Hyperlocal 10-Min Flash Delivery Active</h3>
+            <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: 13 }}>{getTrackingStatus()}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: 26, fontWeight: 900, fontFamily: 'monospace' }}>{timeLeft}:00</span>
-              <div style={{ fontSize: 9, opacity: 0.8, textTransform: 'uppercase' }}>Mins Left</div>
+            <span style={{ fontSize: 26, fontWeight: 900, fontFamily: 'monospace' }}>{timeLeft}:00</span>
+            <div style={{ fontSize: 9, opacity: 0.8, textTransform: 'uppercase' }}>Mins Left</div>
             </div>
-          </div>
-          <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 10, marginTop: 12, overflow: 'hidden' }}>
-            <div style={{ width: `${(timeLeft / 10) * 100}%`, height: '100%', background: '#fff', transition: 'width 0.4s ease' }} />
-          </div>
         </div>
-      )}
+        <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 10, marginTop: 12, overflow: 'hidden' }}>
+            <div style={{ width: `${(timeLeft / 10) * 100}%`, height: '100%', background: '#fff', transition: 'width 0.4s ease' }} />
+        </div>
+        </div>
+    )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
         
         {/* LEFT COLUMN: SHOPPING AREA */}
         <div>
-          <h2 style={{ margin: '0 0 4px 0', color: theme.textMain }}>💊 10-Minute Pharmacy Store</h2>
-          <p style={{ color: theme.textSub, margin: '0 0 20px 0', fontSize: 14 }}>Get emergency medicines delivered under 10 minutes flat from the nearest medical hub.</p>
+        <h2 style={{ margin: '0 0 4px 0', color: theme.textMain }}>💊 10-Minute Pharmacy Store</h2>
+        <p style={{ color: theme.textSub, margin: '0 0 20px 0', fontSize: 14 }}>Get emergency medicines delivered under 10 minutes flat from the nearest medical hub.</p>
 
           {/* Category Filters */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
             {['All', 'Fever', 'Antibiotic', 'Digestive', 'First-Aid', 'Cold'].map(cat => (
-              <button 
+            <button 
                 key={cat} 
                 onClick={() => setActiveTab(cat)}
                 style={{ padding: '8px 16px', borderRadius: 20, border: activeTab === cat ? '1px solid #10b981' : theme.border, background: activeTab === cat ? 'rgba(16,185,129,0.12)' : theme.cardBg, color: activeTab === cat ? '#10b981' : theme.textSub, fontWeight: 600, cursor: 'pointer' }}
-              >
+            >
                 {cat}
-              </button>
+            </button>
             ))}
-          </div>
+        </div>
 
           {/* Medicine Cards Grid */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {filteredMeds.map(med => (
-              <div key={med.id} style={{ background: theme.cardBg, border: theme.border, borderRadius: 14, padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div key={med.id} style={{ background: theme.cardBg, border: theme.border, borderRadius: 14, padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ maxWidth: '70%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontWeight: 700, color: theme.textMain, fontSize: 15 }}>{med.name}</span>
                     <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>{med.tag}</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: theme.textSub, marginTop: 4 }}>{med.desc}</div>
+                </div>
+                <div style={{ fontSize: 12, color: theme.textSub, marginTop: 4 }}>{med.desc}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#10b981', marginBottom: 8 }}>₹{med.price}</div>
-                  <button 
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#10b981', marginBottom: 8 }}>₹{med.price}</div>
+                <button 
                     onClick={() => addToCart(med)}
                     style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(16,185,129,0.1)' }}
-                  >
+                >
                     + Add to Cart
-                  </button>
+                </button>
                 </div>
               </div>
             ))}
-          </div>
+        </div>
         </div>
 
         {/* RIGHT COLUMN: BASKET / CHECKOUT AREA */}
