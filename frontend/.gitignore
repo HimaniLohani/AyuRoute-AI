@@ -1,9 +1,57 @@
-# Frontend heavy folders
+# ────────────────────────────────────────────────────────
+# ⚕️ AYUROUTE AI - PRODUCTION INTEGRITY GITIGNORE
+# ────────────────────────────────────────────────────────
+
+# 💻 FRONTEND NODE REPOS (VITE / REACT Grid)
 frontend/node_modules/
 frontend/dist/
+frontend/build/
+frontend/.local
+frontend/.next/
+frontend/out/
+frontend/.svelte-kit/
+frontend/package-lock.json.log
 
-# Backend temporary files
+# 🐍 BACKEND PYTHON NODE (FLASK Grid)
 backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/.pytest_cache/
+backend/Active_OTPs_Backup/
 backend/.env
+backend/.venv
 backend/venv/
+backend/ENV/
+backend/env/
+
+# 🛑 SYSTEM & ENVIRONMENT VARIABLES (🔐 Highly Sensitive)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.env.*
+
+# ⚙️ SYSTEM LOGS & DIAGNOSTICS
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# 🖥️ OS OPERATIONAL OVERLAYS (Mac / Windows Cache)
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
