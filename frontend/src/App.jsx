@@ -1,9 +1,8 @@
 /* eslint-disable */
 import { useEffect, useState } from 'react';
 import Pharmacy from './pages/Pharmacy';
+import GoogleAuthBtn from "./services/GoogleAuthBtn";
 
-// Dual-Language Comprehensive Dictionary for UI Labels
-// स्थानीय भाषा और अंग्रेजी में अनुवाद के लिए व्यापक शब्दकोश ग्रिड
 const DICT = {
   en: {
     brand: "AyuRoute AI",
@@ -48,10 +47,9 @@ const DICT = {
 };
 
 function App() {
-  const [lang, setLang] = useState('hi'); 
+  const [lang, setLang] = useState('hi');
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [activeTab, setActiveTab] = useState('triage'); 
-  
+  const [activeTab, setActiveTab] = useState('triage');
   const [activeCategory, setActiveCategory] = useState('Emergency');
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [showResults, setShowResults] = useState(false);
@@ -61,23 +59,19 @@ function App() {
   const [apiResponse, setApiResponse] = useState(null);
   const [isListening, setIsListening] = useState(false);
 
-  // Authentication and Session state configuration node
-  const [user, setUser] = useState(null); 
-  const [authMode, setAuthMode] = useState('login'); 
+  const [user, setUser] = useState(null);
+  const [authMode, setAuthMode] = useState('login');
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [fullNameInput, setFullNameInput] = useState('');
   const [gpsLocation, setGpsLocation] = useState("Kanpur Central Grid, Uttar Pradesh");
 
-  // Emergency dispatch registry items
   const [ambStatus, setAmbStatus] = useState('idle');
   const [ambTime, setAmbTime] = useState(10);
   const [dispatchDetails, setDispatchDetails] = useState({ patientName: '', contactNo: '', deliveryAddress: '' });
-  const [otpStep, setOtpStep] = useState(false); 
+  const [otpStep, setOtpStep] = useState(false);
   const [otpInput, setOtpInput] = useState('');
   const [formError, setFormError] = useState('');
-  
-  // ⚡ LIVE SANDBOX STATE: Keeps track of the generated OTP to show as a popup overlay
   const [liveDemoAlert, setLiveDemoAlert] = useState(null);
 
   const t = DICT[lang];
@@ -95,18 +89,10 @@ function App() {
       { id: 'e1', name: { en: 'Severe Chest Pain', hi: 'सीने में तेज़ दर्द' } },
       { id: 'e2', name: { en: 'Severe Shortness of Breath', hi: 'सांस फूलना या सांस न आना' } }
     ],
-    Neurology: [
-      { id: 'n1', name: { en: 'Severe Migraine / Headache', hi: 'तेज़ आधा सिर दर्द (माइग्रेन)' } }
-    ],
-    Orthopedics: [
-      { id: 'o1', name: { en: 'Severe Lower Back Stiffness', hi: 'कमर में भयंकर अकड़न/दर्द' } }
-    ],
-    Gastro: [
-      { id: 'g1', name: { en: 'Acid Reflux / Heartburn', hi: 'पेट में जलन, गैस और खट्टी डकारें' } }
-    ],
-    Respiratory: [
-      { id: 'r1', name: { en: 'Continuous Dry Cough', hi: 'लगातार सूखी खांसी' } }
-    ]
+    Neurology: [{ id: 'n1', name: { en: 'Severe Migraine / Headache', hi: 'तेज़ आधा सिर दर्द (माइग्रेन)' } }],
+    Orthopedics: [{ id: 'o1', name: { en: 'Severe Lower Back Stiffness', hi: 'कमर में भयंकर अकड़न/दर्द' } }],
+    Gastro: [{ id: 'g1', name: { en: 'Acid Reflux / Heartburn', hi: 'पेट में जलन, गैस और खट्टी डकारें' } }],
+    Respiratory: [{ id: 'r1', name: { en: 'Continuous Dry Cough', hi: 'लगातार सूखी खांसी' } }]
   };
 
   useEffect(() => {
@@ -117,47 +103,44 @@ function App() {
     }
   }, []);
 
- const startSpeechRecognition = () => {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    alert("⚠️ Browser Error: Google Chrome use karein, ismein mic best chalta hai.");
-    return;
-  }
-  
-  const recognition = new SpeechRecognition();
-  // Dono Hindi aur English mix ko pakadne ke liye configuration
-  recognition.lang = lang === 'hi' ? 'hi-IN' : 'en-US';
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
-  recognition.onstart = () => { 
-    setIsListening(true); 
+  // When user logs in (either Google or email), pre-fill dispatch details
+  const handleUserLogin = (userData) => {
+    setUser(userData);
+    setDispatchDetails(prev => ({
+      ...prev,
+      patientName: userData.name || '',
+      deliveryAddress: `📍 Verified GPS: [${gpsLocation}]`
+    }));
   };
-  
-  recognition.onerror = (event) => { 
-    console.error("Mic Error:", event.error);
-    setIsListening(false); 
-    if(event.error === 'not-allowed') {
-      alert("🛑 Mic Permission is not allowed inyour browser please giveaccess to your browser.");
+
+  const handleUserLogout = () => {
+    setUser(null);
+  };
+
+  const startSpeechRecognition = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("⚠️ Browser Error: Use Google Chrome for best results.");
+      return;
     }
-  };
-  
-  recognition.onend = () => { 
-    setIsListening(false); 
-  };
-  
-  recognition.onresult = (event) => { 
-    const speechToText = event.results[0][0].transcript;
-    console.log("Suna hua text:", speechToText);
-    setTextInput(speechToText); // Yeh input box mein text daal dega
+    const recognition = new SpeechRecognition();
+    recognition.lang = lang === 'hi' ? 'hi-IN' : 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => { setIsListening(true); };
+    recognition.onerror = (event) => {
+      console.error("Mic Error:", event.error);
+      setIsListening(false);
+      if (event.error === 'not-allowed') alert("🛑 Mic Permission denied. Please allow mic access in browser.");
+    };
+    recognition.onend = () => { setIsListening(false); };
+    recognition.onresult = (event) => {
+      const speechToText = event.results[0][0].transcript;
+      setTextInput(speechToText);
+    };
+    try { recognition.start(); } catch (e) { console.error(e); }
   };
 
-  try {
-    recognition.start();
-  } catch (e) {
-    console.error(e);
-  }
-};
   const getClinicalData = (symptomKey) => {
     const database = {
       'Severe Chest Pain': {
@@ -221,19 +204,12 @@ function App() {
   const processTriageSubmit = () => {
     let searchTarget = textInput.trim().toLowerCase();
     let selectedNode = selectedSymptoms[0] || "";
-
-    if (!selectedNode && !searchTarget) {
-      setShowError(true);
-      return;
-    }
-    
+    if (!selectedNode && !searchTarget) { setShowError(true); return; }
     setShowError(false);
     setIsLoading(true);
     setShowResults(false);
-
     setTimeout(() => {
-      let finalKey = "Continuous Dry Cough"; 
-
+      let finalKey = "Continuous Dry Cough";
       if (selectedNode) {
         if (selectedNode.includes("Chest") || selectedNode.includes("सीने")) finalKey = "Severe Chest Pain";
         else if (selectedNode.includes("Breath") || selectedNode.includes("सांस")) finalKey = "Severe Shortness of Breath";
@@ -241,19 +217,12 @@ function App() {
         else if (selectedNode.includes("Stiffness") || selectedNode.includes("कमर")) finalKey = "Severe Lower Back Stiffness";
         else if (selectedNode.includes("Reflux") || selectedNode.includes("गैस")) finalKey = "Acid Reflux / Heartburn";
       } else {
-        if (searchTarget.includes('chest') || searchTarget.includes('pain') || searchTarget.includes('seene') || searchTarget.includes('dard') || searchTarget.includes('dil')) {
-          finalKey = "Severe Chest Pain";
-        } else if (searchTarget.includes('breathe') || searchTarget.includes('saans') || searchTarget.includes('sans') || searchTarget.includes('asthma')) {
-          finalKey = "Severe Shortness of Breath";
-        } else if (searchTarget.includes('head') || searchTarget.includes('sir') || searchTarget.includes('migraine') || searchTarget.includes('maatha')) {
-          finalKey = "Severe Migraine / Headache";
-        } else if (searchTarget.includes('back') || searchTarget.includes('kamar') || searchTarget.includes('reeth') || searchTarget.includes('haddi')) {
-          finalKey = "Severe Lower Back Stiffness";
-        } else if (searchTarget.includes('acid') || searchTarget.includes('gas') || searchTarget.includes('pet') || searchTarget.includes('pait')) {
-          finalKey = "Acid Reflux / Heartburn";
-        }
+        if (searchTarget.includes('chest') || searchTarget.includes('pain') || searchTarget.includes('seene') || searchTarget.includes('dard') || searchTarget.includes('dil')) finalKey = "Severe Chest Pain";
+        else if (searchTarget.includes('breathe') || searchTarget.includes('saans') || searchTarget.includes('sans') || searchTarget.includes('asthma')) finalKey = "Severe Shortness of Breath";
+        else if (searchTarget.includes('head') || searchTarget.includes('sir') || searchTarget.includes('migraine') || searchTarget.includes('maatha')) finalKey = "Severe Migraine / Headache";
+        else if (searchTarget.includes('back') || searchTarget.includes('kamar') || searchTarget.includes('reeth') || searchTarget.includes('haddi')) finalKey = "Severe Lower Back Stiffness";
+        else if (searchTarget.includes('acid') || searchTarget.includes('gas') || searchTarget.includes('pet') || searchTarget.includes('pait')) finalKey = "Acid Reflux / Heartburn";
       }
-
       setApiResponse(getClinicalData(finalKey));
       setShowResults(true);
       setIsLoading(false);
@@ -263,10 +232,9 @@ function App() {
   const handleCustomAuth = async (e) => {
     e.preventDefault();
     const endpoint = authMode === 'login' ? 'login' : 'signup';
-    const bodyData = authMode === 'login' 
+    const bodyData = authMode === 'login'
       ? { email: emailInput, password: passwordInput }
       : { name: fullNameInput, email: emailInput, password: passwordInput };
-
     try {
       const response = await fetch(`http://localhost:5000/api/auth/${endpoint}`, {
         method: 'POST',
@@ -275,17 +243,11 @@ function App() {
       });
       const data = await response.json();
       if (response.ok) {
-        setUser(data.user);
-        setDispatchDetails(prev => ({
-          ...prev,
-          patientName: data.user.name,
-          deliveryAddress: `📍 Verified GPS: [${gpsLocation}]`
-        }));
+        handleUserLogin(data.user);
       } else { alert(data.message); }
     } catch (err) { alert("⚠️ Connection Error: Python backend server cluster is currently offline."); }
   };
 
-  // Upgraded OTP Request Interceptor to grab data for the live sandbox popup
   const sendOtpRequest = async () => {
     const contactNo = dispatchDetails.contactNo.trim();
     if (!contactNo || !/^[6-9]\d{9}$/.test(contactNo)) {
@@ -302,34 +264,24 @@ function App() {
       if (response.ok) {
         setFormError('');
         setOtpStep(true);
-        // Setting backend's dynamic code inside popup component state
-        setLiveDemoAlert(data.demoOtp); 
+        setLiveDemoAlert(data.demoOtp);
       } else { setFormError(data.message); }
     } catch { setFormError('Communication link interrupted.'); }
   };
 
   const verifyOtpAndBook = async () => {
-    if(!otpInput.trim() || otpInput.length !== 4) {
-      alert("🛑 Access Denied: 4-digit code format required.");
-      return;
-    }
+    if (!otpInput.trim() || otpInput.length !== 4) { alert("🛑 Access Denied: 4-digit code format required."); return; }
     try {
       const response = await fetch('http://localhost:5000/api/orders/verify-and-book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userEmail: user.email,
-          patientName: dispatchDetails.patientName,
-          contactNo: dispatchDetails.contactNo,
-          deliveryAddress: dispatchDetails.deliveryAddress,
-          otp: otpInput
-        })
+        body: JSON.stringify({ userEmail: user.email, patientName: dispatchDetails.patientName, contactNo: dispatchDetails.contactNo, deliveryAddress: dispatchDetails.deliveryAddress, otp: otpInput })
       });
       const data = await response.json();
       if (response.ok) {
         setFormError('');
         setOtpStep(false);
-        setLiveDemoAlert(null); // Clearing toast popup upon correct login 
+        setLiveDemoAlert(null);
         setAmbStatus('booked');
         alert("✅ Security Cleared. Emergency Ambulance Grid Dispatched.");
         const interval = setInterval(() => {
@@ -339,8 +291,8 @@ function App() {
     } catch { alert("Network validation error occurred."); }
   };
 
-  const handleSymptomToggle = (symptomName) => { 
-    setSelectedSymptoms([symptomName]); 
+  const handleSymptomToggle = (symptomName) => {
+    setSelectedSymptoms([symptomName]);
     setTextInput(symptomName);
   };
 
@@ -374,15 +326,30 @@ function App() {
     symCard: (isSelected) => ({ padding: '20px', borderRadius: '16px', border: isSelected ? '2px solid #06b6d4' : `1px solid ${theme.cardBorder}`, backgroundColor: isSelected ? 'rgba(6,182,212,0.06)' : theme.cardBg, cursor: 'pointer', transition: 'all 0.15s ease' })
   };
 
+  // ── LOGIN / REGISTER SCREEN ──────────────────────────────────────────────────
   if (!user) {
     return (
       <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px' }}>
         <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', width: '100%', maxWidth: '440px', borderRadius: '28px', padding: '40px', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+          
+          {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <span style={{ fontSize: '48px' }}>🩺</span>
             <h2 style={{ fontSize: '28px', margin: '12px 0 6px 0', fontWeight: '800', letterSpacing: '-0.5px' }}>AyuRoute Gateway</h2>
             <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0 }}>Secure Healthcare Node Access</p>
           </div>
+
+          {/* Google Sign-In Button */}
+          <GoogleAuthBtn onLogin={handleUserLogin} onLogout={handleUserLogout} />
+
+          {/* OR Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
+            <div style={{ flex: 1, height: '1px', background: '#334155' }} />
+            <span style={{ color: '#64748b', fontSize: '12px', fontWeight: '600' }}>OR</span>
+            <div style={{ flex: 1, height: '1px', background: '#334155' }} />
+          </div>
+
+          {/* Email/Password Form */}
           <form onSubmit={handleCustomAuth}>
             {authMode === 'signup' && (
               <div style={{ marginBottom: '16px' }}>
@@ -402,6 +369,7 @@ function App() {
               {authMode === 'login' ? '🔑 Sign In / लॉगिन करें' : '🚀 Register / अकाउंट बनाएं'}
             </button>
           </form>
+
           <p style={{ textAlign: 'center', fontSize: '14px', color: '#94a3b8', marginTop: '24px', marginBottom: 0 }}>
             {authMode === 'login' ? "Naya account chahiye? " : "Pehle se account hai? "}
             <span onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} style={{ color: '#06b6d4', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}>
@@ -413,17 +381,17 @@ function App() {
     );
   }
 
+  // ── MAIN APP (after login) ───────────────────────────────────────────────────
   return (
     <div style={s.container}>
-      {/* ⚡ VISUAL OVERLAY CONTAINER FOR EVALUATORS AND RECRUITERS */}
       {liveDemoAlert && (
-        <div style={{ position: 'fixed', top: '24px', right: '24px', backgroundColor: '#1e1b4b', border: '2px solid #818cf8', borderRadius: '16px', padding: '20px', zIndex: 99999, width: '320px', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', ease: 'all 0.3s' }}>
+        <div style={{ position: 'fixed', top: '24px', right: '24px', backgroundColor: '#1e1b4b', border: '2px solid #818cf8', borderRadius: '16px', padding: '20px', zIndex: 99999, width: '320px', boxShadow: '0 10px 25px rgba(0,0,0,0.4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
             <span style={{ fontSize: '20px' }}>🔒</span>
             <strong style={{ color: '#fff', fontSize: '14px' }}>AyuRoute Live Sandbox Gateway</strong>
           </div>
           <p style={{ color: '#93c5fd', fontSize: '12px', margin: '0 0 12px 0', lineHeight: '1.4' }}>
-            [DEMO ACTIVE] Dynamic security token transmitted successfully to sandbox node pipeline.
+            [DEMO ACTIVE] Dynamic security token transmitted successfully.
           </p>
           <div style={{ background: '#312e81', borderRadius: '8px', padding: '10px', textAlign: 'center', border: '1px solid #4338ca' }}>
             <span style={{ color: '#f43f5e', fontWeight: '900', fontSize: '22px', letterSpacing: '4px' }}>{liveDemoAlert}</span>
@@ -434,21 +402,27 @@ function App() {
 
       <div style={s.wrapper}>
         <header style={s.header}>
-          <div style={{display:'flex', alignItems:'center', gap:'14px'}}>
-            <div style={{fontSize:'32px'}}>🩺</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ fontSize: '32px' }}>🩺</div>
             <div>
-              <h1 style={{fontSize:'24px', color:theme.textMain, margin:0, fontWeight:'800'}}>{t.brand}</h1>
-              <p style={{fontSize:'13px', color:theme.textMuted, margin:0}}>{t.subBrand}</p>
+              <h1 style={{ fontSize: '24px', color: theme.textMain, margin: 0, fontWeight: '800' }}>{t.brand}</h1>
+              <p style={{ fontSize: '13px', color: theme.textMuted, margin: 0 }}>{t.subBrand}</p>
             </div>
           </div>
-          <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
-            <button onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')} style={{padding:'10px 16px', borderRadius:'12px', cursor:'pointer', fontWeight:'bold', border:'1px solid #06b6d4', background:'rgba(6,182,212,0.1)', color:'#06b6d4', fontSize:'13px'}}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <button onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')} style={{ padding: '10px 16px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', border: '1px solid #06b6d4', background: 'rgba(6,182,212,0.1)', color: '#06b6d4', fontSize: '13px' }}>
               {lang === 'hi' ? 'English Translate' : 'हिंदी में बदलें'}
             </button>
-            <button onClick={() => setIsDarkMode(!isDarkMode)} style={{padding:'10px 16px', borderRadius:'12px', cursor:'pointer', border:`1px solid ${theme.cardBorder}`, background:theme.cardBg, color:theme.textMain, fontSize:'13px'}}>{isDarkMode ? '☀️ Light' : '🌙 Dark'}</button>
+            <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ padding: '10px 16px', borderRadius: '12px', cursor: 'pointer', border: `1px solid ${theme.cardBorder}`, background: theme.cardBg, color: theme.textMain, fontSize: '13px' }}>
+              {isDarkMode ? '☀️ Light' : '🌙 Dark'}
+            </button>
+            {/* User info + logout — works for both Google and email login */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(16,185,129,0.12)', padding: '8px 14px', borderRadius: '12px', border: '1px solid #10b981' }}>
+              {user.photoURL && (
+                <img src={user.photoURL} alt="avatar" style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #10b981' }} />
+              )}
               <span style={{ fontSize: '13px', color: '#10b981', fontWeight: '800' }}>👤 {user.name}</span>
-              <button onClick={() => setUser(null)} style={{ padding: '4px 8px', background: '#ef4444', border: 'none', color: '#fff', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight:'bold' }}>Logout</button>
+              <button onClick={() => handleUserLogout()} style={{ padding: '4px 8px', background: '#ef4444', border: 'none', color: '#fff', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: 'bold' }}>Logout</button>
             </div>
           </div>
         </header>
@@ -461,11 +435,11 @@ function App() {
 
         {activeTab === 'triage' && (
           <div>
-            <p style={{ color: theme.textMain, fontSize: '16px', marginBottom: '24px', lineHeight:'1.5' }}>{t.tagline}</p>
+            <p style={{ color: theme.textMain, fontSize: '16px', marginBottom: '24px', lineHeight: '1.5' }}>{t.tagline}</p>
             <div style={s.searchSection}>
               <div style={s.micBlock}>
                 <button onClick={startSpeechRecognition} style={s.micBtn(isListening)}>{isListening ? '🛑' : '🎤'}</button>
-                <span style={{fontSize:'12px', fontWeight:'bold', color: isListening ? '#ef4444' : theme.textMain}}>{isListening ? t.micListening : t.micText}</span>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: isListening ? '#ef4444' : theme.textMain }}>{isListening ? t.micListening : t.micText}</span>
               </div>
               <div style={s.inputContainer}>
                 <input type="text" value={textInput} onChange={(e) => setTextInput(e.target.value)} placeholder={t.inputPlaceholder} style={s.input} />
@@ -473,7 +447,7 @@ function App() {
               </div>
             </div>
 
-            <div style={{ marginBottom: '14px', fontWeight: 'bold', color: theme.textMain, fontSize:'15px' }}>{t.categoryLabel}</div>
+            <div style={{ marginBottom: '14px', fontWeight: 'bold', color: theme.textMain, fontSize: '15px' }}>{t.categoryLabel}</div>
             <div style={s.catGrid}>
               {CATEGORIES.map(cat => (
                 <button key={cat.id} onClick={() => setActiveCategory(cat.id)} style={s.catBtn(activeCategory === cat.id)}>{cat.icon} {cat.label[lang]}</button>
@@ -485,26 +459,24 @@ function App() {
                 const isSelected = selectedSymptoms.includes(symptom.name[lang]);
                 return (
                   <div key={symptom.id} onClick={() => handleSymptomToggle(symptom.name[lang])} style={s.symCard(isSelected)}>
-                    <span style={{fontSize:'15px', fontWeight:'700', color:theme.textMain}}>{symptom.name[lang]}</span>
+                    <span style={{ fontSize: '15px', fontWeight: '700', color: theme.textMain }}>{symptom.name[lang]}</span>
                   </div>
                 );
               })}
             </div>
 
             {showError && <div style={{ color: '#ef4444', marginBottom: '20px', fontWeight: 'bold' }}>{t.errorText}</div>}
-            {isLoading && <div style={{ color: '#06b6d4', marginBottom: '20px', fontWeight:'bold' }}>{t.loadingText}</div>}
+            {isLoading && <div style={{ color: '#06b6d4', marginBottom: '20px', fontWeight: 'bold' }}>{t.loadingText}</div>}
 
             {showResults && apiResponse && (
-              <div style={{ backgroundColor: theme.cardBg, border: `2px solid ${apiResponse.color}`, borderRadius: '24px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '28px', boxShadow:'0 10px 25px rgba(0,0,0,0.05)' }}>
+              <div style={{ backgroundColor: theme.cardBg, border: `2px solid ${apiResponse.color}`, borderRadius: '24px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '28px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ margin: 0, color: theme.textMain, fontSize: '22px', fontWeight:'800' }}>📋 Real-Time Health Diagnostic Radar</h3>
+                  <h3 style={{ margin: 0, color: theme.textMain, fontSize: '22px', fontWeight: '800' }}>📋 Real-Time Health Diagnostic Radar</h3>
                   <span style={{ padding: '8px 20px', borderRadius: '999px', background: apiResponse.bg, color: apiResponse.color, fontWeight: '900', fontSize: '14px', border: `1px solid ${apiResponse.color}` }}>{apiResponse.severity}</span>
                 </div>
-                
                 <hr style={{ border: 'none', borderTop: `1px solid ${theme.cardBorder}`, margin: 0 }} />
-                
                 <div>
-                  <h4 style={{ color: apiResponse.color, margin: '0 0 16px 0', fontSize: '18px', fontWeight:'700' }}>{t.recommendedDocs}</h4>
+                  <h4 style={{ color: apiResponse.color, margin: '0 0 16px 0', fontSize: '18px', fontWeight: '700' }}>{t.recommendedDocs}</h4>
                   <div style={{ overflowX: 'auto', borderRadius: '14px', border: `1px solid ${theme.cardBorder}` }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', backgroundColor: theme.innerInput }}>
                       <thead>
@@ -528,23 +500,20 @@ function App() {
                     </table>
                   </div>
                 </div>
-
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                   <div style={{ background: isDarkMode ? 'rgba(16,185,129,0.05)' : '#f0fdf4', padding: '24px', borderRadius: '16px', border: '1px solid rgba(16,185,129,0.2)' }}>
-                    <h4 style={{ color: '#10b981', margin: '0 0 14px 0', fontSize: '18px', fontWeight:'700' }}>{t.suggestedMeds}</h4>
+                    <h4 style={{ color: '#10b981', margin: '0 0 14px 0', fontSize: '18px', fontWeight: '700' }}>{t.suggestedMeds}</h4>
                     <ul style={{ margin: 0, paddingLeft: '20px', color: theme.textMain, lineHeight: '1.8' }}>
-                      {apiResponse.meds.map((med, idx) => <li key={idx} style={{fontWeight:'600'}}>{med}</li>)}
+                      {apiResponse.meds.map((med, idx) => <li key={idx} style={{ fontWeight: '600' }}>{med}</li>)}
                     </ul>
                   </div>
-
                   <div style={{ background: isDarkMode ? 'rgba(234,179,8,0.05)' : '#fefce8', padding: '24px', borderRadius: '16px', border: '1px solid rgba(234,179,8,0.2)' }}>
-                    <h4 style={{ color: '#eab308', margin: '0 0 14px 0', fontSize: '18px', fontWeight:'700' }}>{t.suggestedDiet}</h4>
+                    <h4 style={{ color: '#eab308', margin: '0 0 14px 0', fontSize: '18px', fontWeight: '700' }}>{t.suggestedDiet}</h4>
                     <ul style={{ margin: 0, paddingLeft: '20px', color: theme.textMain, lineHeight: '1.8' }}>
                       {apiResponse.diet.map((dietItem, idx) => <li key={idx}>{dietItem}</li>)}
                     </ul>
                   </div>
                 </div>
-
                 <div style={{ fontSize: '13px', color: theme.textMuted, fontStyle: 'italic', background: theme.innerInput, padding: '14px', borderRadius: '10px', borderLeft: '4px solid #ef4444' }}>
                   {t.disclaimer}
                 </div>
@@ -560,10 +529,9 @@ function App() {
             <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: '24px', padding: '30px' }}>
               <h3>🗺️ Emergency Dispatch Node Parameters</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <input type="text" disabled={otpStep} value={dispatchDetails.patientName} onChange={(e) => setDispatchDetails({...dispatchDetails, patientName: e.target.value})} placeholder="Patient Name" style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText }} />
-                <input type="tel" disabled={otpStep} placeholder="Mobile Number (e.g. 9876543210)" value={dispatchDetails.contactNo} onChange={(e) => setDispatchDetails({...dispatchDetails, contactNo: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText }} />
-                <textarea rows="3" disabled={otpStep} placeholder="Address" value={dispatchDetails.deliveryAddress} onChange={(e) => setDispatchDetails({...dispatchDetails, deliveryAddress: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText }}></textarea>
-                
+                <input type="text" disabled={otpStep} value={dispatchDetails.patientName} onChange={(e) => setDispatchDetails({ ...dispatchDetails, patientName: e.target.value })} placeholder="Patient Name" style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText }} />
+                <input type="tel" disabled={otpStep} placeholder="Mobile Number (e.g. 9876543210)" value={dispatchDetails.contactNo} onChange={(e) => setDispatchDetails({ ...dispatchDetails, contactNo: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText }} />
+                <textarea rows="3" disabled={otpStep} placeholder="Address" value={dispatchDetails.deliveryAddress} onChange={(e) => setDispatchDetails({ ...dispatchDetails, deliveryAddress: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: theme.innerInput, color: theme.innerInputText }}></textarea>
                 {otpStep && (
                   <div style={{ borderTop: '2px dashed #06b6d4', paddingTop: '15px', marginTop: '10px' }}>
                     <label style={{ display: 'block', fontWeight: 'bold', color: '#06b6d4', marginBottom: '6px' }}>🔑 Enter 4-Digit Security Token:</label>
@@ -573,11 +541,9 @@ function App() {
               </div>
               {formError && <div style={{ color: '#ef4444', marginTop: '10px', fontWeight: 'bold' }}>{formError}</div>}
             </div>
-
             <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: '24px', padding: '30px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
               <span style={{ fontSize: '54px' }}>🚨</span>
               <h2>Emergency Ambulance Grid</h2>
-              
               {ambStatus === 'booked' ? (
                 <div style={{ color: '#ef4444', fontWeight: '800', background: 'rgba(239,68,68,0.1)', padding: '15px', borderRadius: '12px', border: '1px solid #ef4444', width: '100%' }}>📡 DISPATCH SECURED! LIVE RADAR TRACKING: {ambTime}m</div>
               ) : otpStep ? (
@@ -588,7 +554,6 @@ function App() {
             </div>
           </div>
         )}
-
       </div>
     </div>
   );
