@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { auth, signInWithGoogle, logoutWithGoogle } from "./firebase";
+import { logoutWithGoogle, signInWithGoogle } from "./firebase";
 
 export default function GoogleAuthBtn({ onLogin, onLogout }) {
   const [loading, setLoading] = useState(false);

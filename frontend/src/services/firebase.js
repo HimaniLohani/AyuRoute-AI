@@ -1,13 +1,14 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 
+
 const firebaseConfig = {
-  apiKey: "AIzaSyA-Yy6ygIUulIVFfpcMML6AfGSaYzFyA-E",
-  authDomain: "ayuroute-ai.firebaseapp.com",
-  projectId: "ayuroute-ai",
-  storageBucket: "ayuroute-ai.firebasestorage.app",
-  messagingSenderId: "823679096555",
-  appId: "1:823679096555:web:7ea4c442edfd46a73d90ae",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
