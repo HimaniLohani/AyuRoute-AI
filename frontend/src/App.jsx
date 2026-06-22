@@ -18,7 +18,7 @@ const DICT = {
     suggestedMeds: "💊 Initial First-Aid & Generic Medicines (प्राथमिक उपचार और दवाएं)",
     suggestedDiet: "🥗 Dietary Guidelines & Precautions (परहेज और खान-पान)",
     disclaimer: "⚕️ Protocol Notice: This data is for informational guidance. In critical emergencies, please dial 108 or rush to the nearest emergency ward immediately.",
-    loadingText: "Scanning dynamic medical grid for your location...",
+    loadingText: "🤖 AI is analyzing your symptoms...",
     tableDocName: "Doctor Name",
     tableSpecialty: "Specialization",
     tableDistance: "Distance / Location",
@@ -38,7 +38,7 @@ const DICT = {
     suggestedMeds: "💊 प्राथमिक उपचार और सामान्य दवाएं (First-Aid & Medicines)",
     suggestedDiet: "🥗 आवश्यक परहेज और खान-पान टिप्स (Dietary Guidelines)",
     disclaimer: "⚕️ आवश्यक सूचना: यह जानकारी केवल आपके मार्गदर्शन के लिए है। गंभीर आपातकाल की स्थिति में तुरंत 108 डायल करें या नज़दीकी अस्पताल जाएं।",
-    loadingText: "आपके स्थान के अनुसार सही स्वास्थ्य जानकारी खोजी जा रही है...",
+    loadingText: "🤖 AI आपके लक्षणों का विश्लेषण कर रहा है...",
     tableDocName: "डॉक्टर का नाम",
     tableSpecialty: "विशेषज्ञता (Department)",
     tableDistance: "दूरी / क्लिनिक का पता",
@@ -120,7 +120,7 @@ function App() {
   const startSpeechRecognition = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("⚠️ Browser Error: Use Google Chrome for best results.");
+      alert("⚠️ Browser Error: Google Chrome use karein, ismein mic best chalta hai.");
       return;
     }
     const recognition = new SpeechRecognition();
@@ -139,6 +139,27 @@ function App() {
       setTextInput(speechToText);
     };
     try { recognition.start(); } catch (e) { console.error(e); }
+  };
+
+  // 🤖 AI-Powered Symptom Analysis — calls Gemini via Flask backend
+  const getAIClinicalData = async (symptomText) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/symptoms/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symptomText, lang })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        return data;
+      } else {
+        console.error('AI analysis error:', data.message);
+        return getClinicalData('Continuous Dry Cough'); // fallback to local data
+      }
+    } catch (err) {
+      console.error('AI analysis request failed:', err);
+      return getClinicalData('Continuous Dry Cough'); // fallback to local data
+    }
   };
 
   const getClinicalData = (symptomKey) => {
@@ -201,32 +222,23 @@ function App() {
     return database[symptomKey] || database['Continuous Dry Cough'];
   };
 
-  const processTriageSubmit = () => {
-    let searchTarget = textInput.trim().toLowerCase();
+  const processTriageSubmit = async () => {
+    let searchTarget = textInput.trim();
     let selectedNode = selectedSymptoms[0] || "";
-    if (!selectedNode && !searchTarget) { setShowError(true); return; }
+    const finalSymptomText = selectedNode || searchTarget;
+
+    if (!finalSymptomText) { setShowError(true); return; }
+
     setShowError(false);
     setIsLoading(true);
     setShowResults(false);
-    setTimeout(() => {
-      let finalKey = "Continuous Dry Cough";
-      if (selectedNode) {
-        if (selectedNode.includes("Chest") || selectedNode.includes("सीने")) finalKey = "Severe Chest Pain";
-        else if (selectedNode.includes("Breath") || selectedNode.includes("सांस")) finalKey = "Severe Shortness of Breath";
-        else if (selectedNode.includes("Migraine") || selectedNode.includes("सिर दर्द")) finalKey = "Severe Migraine / Headache";
-        else if (selectedNode.includes("Stiffness") || selectedNode.includes("कमर")) finalKey = "Severe Lower Back Stiffness";
-        else if (selectedNode.includes("Reflux") || selectedNode.includes("गैस")) finalKey = "Acid Reflux / Heartburn";
-      } else {
-        if (searchTarget.includes('chest') || searchTarget.includes('pain') || searchTarget.includes('seene') || searchTarget.includes('dard') || searchTarget.includes('dil')) finalKey = "Severe Chest Pain";
-        else if (searchTarget.includes('breathe') || searchTarget.includes('saans') || searchTarget.includes('sans') || searchTarget.includes('asthma')) finalKey = "Severe Shortness of Breath";
-        else if (searchTarget.includes('head') || searchTarget.includes('sir') || searchTarget.includes('migraine') || searchTarget.includes('maatha')) finalKey = "Severe Migraine / Headache";
-        else if (searchTarget.includes('back') || searchTarget.includes('kamar') || searchTarget.includes('reeth') || searchTarget.includes('haddi')) finalKey = "Severe Lower Back Stiffness";
-        else if (searchTarget.includes('acid') || searchTarget.includes('gas') || searchTarget.includes('pet') || searchTarget.includes('pait')) finalKey = "Acid Reflux / Heartburn";
-      }
-      setApiResponse(getClinicalData(finalKey));
-      setShowResults(true);
-      setIsLoading(false);
-    }, 700);
+
+    // 🤖 Calls Gemini AI via Flask backend for dynamic, real-time analysis
+    const result = await getAIClinicalData(finalSymptomText);
+
+    setApiResponse(result);
+    setShowResults(true);
+    setIsLoading(false);
   };
 
   const handleCustomAuth = async (e) => {

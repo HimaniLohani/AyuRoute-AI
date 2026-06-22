@@ -8,28 +8,131 @@ import bcrypt
 import re
 import random
 import os
+import json
+from dotenv import load_dotenv
+from groq import Groq
+
+load_dotenv()  # Loads variables from .env file
 
 app = Flask(__name__)
 CORS(app)
 
+# 🤖 GROQ AI CONFIGURATION (Free, fast, no card required)
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+if GROQ_API_KEY:
+    groq_client = Groq(api_key=GROQ_API_KEY)
+    print("🤖 Groq AI Engine Connected Successfully!")
+else:
+    groq_client = None
+    print("⚠️ GROQ_API_KEY not found. AI symptom analysis will use fallback data.")
+
 # 🍃 DATABASE CONFIGURATION NODE
-# Local testing aur Cloud deployment dono ke liye optimized hai
 try:
-    # Agar kal deployment ke waqt environment variable milega toh cloud use karega, nahi toh local database
     MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
     client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
-    
     db = client["ayuroute_db"]
     users_collection = db["users"]
     orders_collection = db["orders"]
-    
-    client.server_info() # Connection verify karne ke liye trigger
+    client.server_info()
     print("🍃 Database Grid Connected Successfully!")
 except Exception as e:
     print(f"⚠️ Database Connection Failed: {e}")
 
-# Temporary runtime storage for verification codes
 active_otps = {}
+
+# ────────────────────────────────────────────────────────
+# 🤖 AI SYMPTOM ANALYSIS ENGINE (GROQ-POWERED)
+# ────────────────────────────────────────────────────────
+
+# Fallback data used if Groq API fails or is unavailable
+FALLBACK_DATA = {
+    "severity": "MODERATE / मध्यम",
+    "severityLevel": "medium",
+    "color": "#06b6d4",
+    "bg": "#06b6d41A",
+    "doctors": [
+        {"name": "Dr. General Physician", "type": "General Physician", "dist": "1.0 km | Local Clinic", "time": "10:00 AM - 06:00 PM"}
+    ],
+    "meds": ["Paracetamol 650mg (consult doctor before use)"],
+    "diet": ["Stay hydrated and rest adequately.", "❌ Consult a doctor if symptoms persist beyond 2 days."]
+}
+
+def get_ai_symptom_analysis(symptom_text, lang="en"):
+    """
+    Uses Groq (Llama 3.3 70B) to analyze any free-text symptom description and
+    return a structured medical guidance JSON response.
+    """
+    if not groq_client:
+        return FALLBACK_DATA
+
+    language_instruction = "Respond in Hindi (Devanagari script) mixed with English medical terms, Indian context." if lang == "hi" else "Respond in English with Indian context."
+
+    prompt = f"""You are a medical triage assistant for an Indian healthcare app called AyuRoute AI.
+A user described their symptom as: "{symptom_text}"
+
+{language_instruction}
+
+Analyze this symptom and respond ONLY with valid JSON (no markdown, no preamble, no code fences) in EXACTLY this structure:
+
+{{
+  "severity": "string describing severity level with emoji, e.g. 'CRITICAL / गंभीर स्थिति 🚨'",
+  "severityLevel": "one of: low, medium, high, critical",
+  "color": "hex color code matching severity (red #ef4444 for critical, orange #f97316 for high, cyan #06b6d4 for medium, green #10b981 for low)",
+  "doctors": [
+    {{"name": "Dr. [Indian name]", "type": "specialization in English with Hindi in brackets", "dist": "distance like '1.2 km | Area Name, Kanpur'", "time": "available timing"}}
+  ],
+  "meds": ["medicine name with dosage and instructions, 2-3 items"],
+  "diet": ["dietary advice or precaution, 2-3 items, include at least one thing to avoid with ❌ prefix"]
+}}
+
+Provide exactly 2 doctor entries with realistic Indian doctor names and Kanpur-area locations.
+If the symptom suggests a medical emergency (chest pain, breathing difficulty, severe bleeding, unconsciousness), set severityLevel to "critical" and color to "#ef4444".
+Always include a note to consult a real doctor; do not provide exact prescription-only drug dosages beyond common OTC guidance.
+Respond with ONLY the JSON object, nothing else."""
+
+    try:
+        completion = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4,
+            max_tokens=800,
+        )
+        raw_text = completion.choices[0].message.content.strip()
+
+        # Clean up potential markdown code fences from the model's response
+        if raw_text.startswith("```"):
+            raw_text = raw_text.strip("`")
+            if raw_text.lower().startswith("json"):
+                raw_text = raw_text[4:].strip()
+
+        parsed = json.loads(raw_text)
+
+        # Add background color derived from main color for UI styling
+        color = parsed.get("color", "#06b6d4")
+        parsed["bg"] = f"{color}1A"  # adds transparency hex suffix
+
+        return parsed
+    except Exception as e:
+        print(f"⚠️ Groq AI analysis failed: {e}")
+        return FALLBACK_DATA
+
+# ────────────────────────────────────────────────────────
+# 🛣️ NEW: SYMPTOM ANALYSIS API (AI-POWERED)
+# ────────────────────────────────────────────────────────
+@app.route('/api/symptoms/analyze', methods=['POST'])
+def analyze_symptoms():
+    try:
+        data = request.json
+        symptom_text = str(data.get('symptomText', '')).strip()
+        lang = data.get('lang', 'en')
+
+        if not symptom_text:
+            return jsonify({"message": "Please describe your symptoms first."}), 400
+
+        result = get_ai_symptom_analysis(symptom_text, lang)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": "Symptom analysis failed.", "error": str(e)}), 500
 
 # ────────────────────────────────────────────────────────
 # 🛣️ 1. GOOGLE AUTHENTICATION ENDPOINT
@@ -39,14 +142,10 @@ def google_auth():
     try:
         data = request.json
         token = data.get('token')
-        
         if not token:
             return jsonify({"error": "Token missing"}), 400
-            
-        # ⚡ Yahan aap firebase_admin library use karke token verify kar sakte ho
-        # Abhi ke liye secure static success return karega frontend validation ke liye
         return jsonify({
-            "status": "success", 
+            "status": "success",
             "message": "User session authenticated on backend"
         }), 200
     except Exception as e:
@@ -69,7 +168,6 @@ def signup():
         if users_collection.find_one({"email": email}):
             return jsonify({"message": "Registration failed: This email address is already registered."}), 400
 
-        # Securing password via bcrypt salt grid
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
         users_collection.insert_one({
@@ -77,9 +175,9 @@ def signup():
             "email": email,
             "password": hashed_password
         })
-        
+
         return jsonify({
-            "message": "Registration completed successfully.", 
+            "message": "Registration completed successfully.",
             "user": {"name": name, "email": email}
         }), 201
     except Exception as e:
@@ -102,10 +200,9 @@ def login():
         if not user:
             return jsonify({"message": "Authentication failed: User account not found. Please register first."}), 404
 
-        # Verifying encrypted database key with request parameters
         if bcrypt.checkpw(password.encode('utf-8'), user['password']):
             return jsonify({
-                "message": "Authentication verified successfully.", 
+                "message": "Authentication verified successfully.",
                 "user": {"name": user['name'], "email": user['email']}
             }), 200
         else:
@@ -125,17 +222,14 @@ def request_otp():
         if not contact_no or not re.match(r"^[6-9]\d{9}$", contact_no):
             return jsonify({"message": "Verification failed: Please enter a valid 10-digit Indian mobile number."}), 400
 
-        # Generating a secure 4-digit verification token
         otp = str(random.randint(1000, 9999))
         active_otps[contact_no] = otp
 
-        # Console print setup for local backend tracing
         print(f"🔒 [SECURE GATEWAY] Verification token generated for +91-{contact_no} -> {otp}")
 
-        # ⚡ SANDBOX INTEGRATION: Transmitting token inside JSON payload for secure UI overlay extraction
         return jsonify({
             "message": "Verification token transmitted successfully.",
-            "demoOtp": otp  # Accessible by UI during live recruiter evaluations
+            "demoOtp": otp
         }), 200
     except Exception as e:
         return jsonify({"message": "Failed to generate verification token.", "error": str(e)}), 500
@@ -157,11 +251,9 @@ def verify_and_book():
         if not patient_name:
             return jsonify({"message": "Booking failed: Patient name cannot be empty."}), 400
 
-        # Security check: matching user submission against temporary memory core
         if contact_no not in active_otps or active_otps[contact_no] != user_otp:
             return jsonify({"message": "Security Alert: Invalid or expired verification token. Access Denied."}), 401
 
-        # Clear token post verification to maintain security compliance
         del active_otps[contact_no]
 
         order_payload = {
@@ -172,9 +264,9 @@ def verify_and_book():
             "status": "Dispatched"
         }
         orders_collection.insert_one(order_payload)
-        
+
         return jsonify({
-            "message": "Ambulance dispatched successfully. Emergency node updated.", 
+            "message": "Ambulance dispatched successfully. Emergency node updated.",
             "status": "Success"
         }), 201
     except Exception as e:
@@ -184,6 +276,5 @@ def verify_and_book():
 # 🚀 CORE INITIALIZATION NODE
 # ────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    # Dynamic port selection rules for hosting instances like Render
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)

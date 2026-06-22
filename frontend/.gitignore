@@ -56,3 +56,7 @@ Thumbs.db
 *.sln
 *.swp
 node_modules/
+.env
+.env
+venv/
+__pycache__/
