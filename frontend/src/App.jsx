@@ -144,7 +144,7 @@ function App() {
   // 🤖 AI-Powered Symptom Analysis — calls Gemini via Flask backend
   const getAIClinicalData = async (symptomText) => {
     try {
-      const response = await fetch('http://localhost:5000/api/symptoms/analyze', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/symptoms/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symptomText, lang })
@@ -248,7 +248,7 @@ function App() {
       ? { email: emailInput, password: passwordInput }
       : { name: fullNameInput, email: emailInput, password: passwordInput };
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/${endpoint}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)
@@ -267,7 +267,7 @@ function App() {
       return;
     }
     try {
-      const response = await fetch('http://localhost:5000/api/orders/request-otp', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/request-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contactNo })
@@ -284,7 +284,7 @@ function App() {
   const verifyOtpAndBook = async () => {
     if (!otpInput.trim() || otpInput.length !== 4) { alert("🛑 Access Denied: 4-digit code format required."); return; }
     try {
-      const response = await fetch('http://localhost:5000/api/orders/verify-and-book', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/verify-and-book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userEmail: user.email, patientName: dispatchDetails.patientName, contactNo: dispatchDetails.contactNo, deliveryAddress: dispatchDetails.deliveryAddress, otp: otpInput })
